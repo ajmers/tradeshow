@@ -2,22 +2,35 @@ import { useParams } from 'react-router-dom'
 import { Breadcrumb } from '@/components/Breadcrumb'
 import { useBooths } from '@/hooks/useBooths'
 import { useWalls } from '@/hooks/useWalls'
-import { WallsGrid } from '@/features/walls/WallsGrid'
+import { useItems } from '@/hooks/useItems'
+import { useWallAssignments } from '@/hooks/useWallAssignments'
+import { WallsGrid, type WallWithPlacements } from '@/features/walls/WallsGrid'
+import type { PlacedItem } from '@/features/walls/PlacedItem'
 
 export function BoothDetailPage() {
   const { boothId } = useParams<{ boothId: string }>()
   const booths = useBooths()
   const walls = useWalls()
+  const items = useItems()
+  const wallAssignments = useWallAssignments()
 
-  if (booths.isPending) {
-    return <p>Loading booth…</p>
+  const isPending = booths.isPending || walls.isPending || items.isPending || wallAssignments.isPending
+  const firstError = booths.error ?? walls.error ?? items.error ?? wallAssignments.error
+
+  if (isPending) {
+    return <p>Loading…</p>
   }
 
-  if (booths.isError) {
-    return <p role="alert">Error loading booth: {booths.error.message}</p>
+  if (firstError) {
+    return <p role="alert">Error: {firstError.message}</p>
   }
 
-  const booth = booths.data.find((item) => item.id === boothId)
+  const boothsData = booths.data ?? []
+  const wallsData = walls.data ?? []
+  const itemsData = items.data ?? []
+  const wallAssignmentsData = wallAssignments.data ?? []
+
+  const booth = boothsData.find((entry) => entry.id === boothId)
 
   if (!booth) {
     return (
@@ -30,7 +43,21 @@ export function BoothDetailPage() {
 
   const boothName = booth.fields['Booth Name'] ?? 'Untitled booth'
   const wallIds = new Set(booth.fields.Walls ?? [])
-  const boothWalls = walls.data?.filter((wall) => wallIds.has(wall.id)) ?? []
+  const boothWalls = wallsData.filter((wall) => wallIds.has(wall.id))
+  const boothAssignments = wallAssignmentsData.filter((assignment) =>
+    wallIds.has(assignment.fields.Wall?.[0] ?? ''),
+  )
+
+  const wallsWithPlacements: WallWithPlacements[] = boothWalls.map((wall) => {
+    const placedItems: PlacedItem[] = boothAssignments
+      .filter((assignment) => assignment.fields.Wall?.[0] === wall.id)
+      .map((assignment) => {
+        const item = itemsData.find((entry) => entry.id === assignment.fields.Painting?.[0])
+        return item ? { assignment, item } : null
+      })
+      .filter((entry): entry is PlacedItem => entry !== null)
+    return { wall, placedItems }
+  })
 
   return (
     <main>
@@ -39,9 +66,7 @@ export function BoothDetailPage() {
 
       <section>
         <h2>Walls</h2>
-        {walls.isPending && <p>Loading walls…</p>}
-        {walls.isError && <p role="alert">Error loading walls: {walls.error.message}</p>}
-        {walls.isSuccess && <WallsGrid walls={boothWalls} boothId={booth.id} />}
+        <WallsGrid walls={wallsWithPlacements} boothId={booth.id} />
       </section>
     </main>
   )

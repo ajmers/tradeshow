@@ -1,16 +1,15 @@
-import useImage from 'use-image'
-import { Stage, Layer, Rect, Text, Group, Image as KonvaImage } from 'react-konva'
-import type { Wall, Item, WallAssignment } from '@shared'
-import { toInches, wallDimensionToInches } from '@/features/walls/wallScale'
-import { getItemImageUrl } from '@/features/items/getItemImageUrl'
+import { useEffect, useRef } from 'react'
+import type Konva from 'konva'
+import { Stage, Layer, Rect, Group, Transformer } from 'react-konva'
+import type { Wall } from '@shared'
+import { wallDimensionToInches } from '@/features/walls/wallScale'
+import { PlacedItemNode } from '@/features/walls/PlacedItemNode'
+import { WallGrid } from '@/features/walls/WallGrid'
+import type { PlacedItem } from '@/features/walls/PlacedItem'
 
 const MAX_STAGE = 700
-const DEFAULT_ITEM_INCHES = 6
-
-export interface PlacedItem {
-  assignment: WallAssignment
-  item: Item
-}
+// How far beyond the wall's own bounds you can scroll to see items placed off-wall.
+const MARGIN_INCHES = 36
 
 interface WallAssignmentCanvasProps {
   wall: Wall
@@ -18,82 +17,13 @@ interface WallAssignmentCanvasProps {
   selectedAssignmentId: string | null
   onSelect: (assignmentId: string | null) => void
   onMove: (assignmentId: string, xInches: number, yInches: number) => void
-}
-
-interface PlacedItemNodeProps {
-  assignment: WallAssignment
-  item: Item
-  scale: number
-  isSelected: boolean
-  onSelect: (assignmentId: string) => void
-  onMove: (assignmentId: string, xInches: number, yInches: number) => void
-}
-
-function PlacedItemNode({
-  assignment,
-  item,
-  scale,
-  isSelected,
-  onSelect,
-  onMove,
-}: PlacedItemNodeProps) {
-  const [image] = useImage(getItemImageUrl(item) ?? '')
-
-  const itemWidthInches = item.fields.Width
-    ? toInches(item.fields.Width, item.fields['Unit of Measure'])
-    : DEFAULT_ITEM_INCHES
-  const itemHeightInches = item.fields.Height
-    ? toInches(item.fields.Height, item.fields['Unit of Measure'])
-    : DEFAULT_ITEM_INCHES
-  const w = itemWidthInches * scale
-  const h = itemHeightInches * scale
-  const x = (assignment.fields['X Position'] ?? 0) * scale
-  const y = (assignment.fields['Y Position'] ?? 0) * scale
-
-  return (
-    <Group
-      x={x}
-      y={y}
-      rotation={assignment.fields['Rotation Angle'] ?? 0}
-      draggable
-      onDragEnd={(event) => {
-        const node = event.target
-        onMove(assignment.id, node.x() / scale, node.y() / scale)
-      }}
-      onClick={() => onSelect(assignment.id)}
-      onTap={() => onSelect(assignment.id)}
-    >
-      {image ? (
-        <KonvaImage
-          image={image}
-          width={w}
-          height={h}
-          stroke={isSelected ? '#2563eb' : '#a1a1aa'}
-          strokeWidth={isSelected ? 2 : 1}
-        />
-      ) : (
-        <>
-          <Rect
-            width={w}
-            height={h}
-            fill="#fafafa"
-            stroke={isSelected ? '#2563eb' : '#a1a1aa'}
-            strokeWidth={isSelected ? 2 : 1}
-          />
-          <Text
-            text={item.fields.Title ?? 'Untitled'}
-            width={w}
-            height={h}
-            align="center"
-            verticalAlign="middle"
-            fontSize={11}
-            padding={4}
-            fill="#18181b"
-          />
-        </>
-      )}
-    </Group>
-  )
+  onTransformEnd: (
+    assignmentId: string,
+    xInches: number,
+    yInches: number,
+    rotationDegrees: number,
+  ) => void
+  showGrid?: boolean
 }
 
 export function WallAssignmentCanvas({
@@ -102,7 +32,13 @@ export function WallAssignmentCanvas({
   selectedAssignmentId,
   onSelect,
   onMove,
+  onTransformEnd,
+  showGrid = true,
 }: WallAssignmentCanvasProps) {
+  const nodeRefs = useRef(new Map<string, Konva.Group>())
+  const transformerRef = useRef<Konva.Transformer>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+
   const fields = wall.fields
   const widthInches = fields.Width
     ? wallDimensionToInches(fields.Width, fields['Unit of Measure'])
@@ -111,47 +47,88 @@ export function WallAssignmentCanvas({
     ? wallDimensionToInches(fields.Height, fields['Unit of Measure'])
     : undefined
 
+  useEffect(() => {
+    const transformer = transformerRef.current
+    if (!transformer) {
+      return
+    }
+    const node = selectedAssignmentId ? nodeRefs.current.get(selectedAssignmentId) : undefined
+    transformer.nodes(node ? [node] : [])
+    transformer.getLayer()?.batchDraw()
+  }, [selectedAssignmentId, placedItems])
+
+  // Center the scroll on the wall itself rather than the top-left corner of the margin.
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) {
+      return
+    }
+    container.scrollLeft = (container.scrollWidth - container.clientWidth) / 2
+    container.scrollTop = (container.scrollHeight - container.clientHeight) / 2
+  }, [wall.id])
+
   if (!widthInches || !heightInches) {
     return <p>This wall doesn&apos;t have dimensions set yet.</p>
   }
 
   const scale = Math.min(MAX_STAGE / widthInches, MAX_STAGE / heightInches)
-  const stageWidth = widthInches * scale
-  const stageHeight = heightInches * scale
+  const wallWidth = widthInches * scale
+  const wallHeight = heightInches * scale
+  const margin = MARGIN_INCHES * scale
+  const canvasWidth = wallWidth + margin * 2
+  const canvasHeight = wallHeight + margin * 2
   const wallFill = fields['Wall Color']?.trim() || '#e4e4e7'
 
   return (
-    <Stage
-      width={stageWidth}
-      height={stageHeight}
-      onMouseDown={(event) => {
-        if (event.target === event.target.getStage()) {
-          onSelect(null)
-        }
-      }}
-    >
-      <Layer>
-        <Rect
-          x={0}
-          y={0}
-          width={stageWidth}
-          height={stageHeight}
-          fill={wallFill}
-          stroke="#71717a"
-          strokeWidth={1}
-        />
-        {placedItems.map(({ assignment, item }) => (
-          <PlacedItemNode
-            key={assignment.id}
-            assignment={assignment}
-            item={item}
-            scale={scale}
-            isSelected={assignment.id === selectedAssignmentId}
-            onSelect={onSelect}
-            onMove={onMove}
-          />
-        ))}
-      </Layer>
-    </Stage>
+    <div className="wall-editor-canvas" ref={containerRef}>
+      <Stage
+        width={canvasWidth}
+        height={canvasHeight}
+        onMouseDown={(event) => {
+          if (event.target === event.target.getStage()) {
+            onSelect(null)
+          }
+        }}
+      >
+        <Layer>
+          <Rect x={0} y={0} width={canvasWidth} height={canvasHeight} fill="#d4d4d8" />
+          <Group x={margin} y={margin}>
+            <Rect
+              x={0}
+              y={0}
+              width={wallWidth}
+              height={wallHeight}
+              fill={wallFill}
+              stroke="#71717a"
+              strokeWidth={1}
+            />
+            {showGrid && (
+              <WallGrid widthInches={widthInches} heightInches={heightInches} scale={scale} />
+            )}
+            {placedItems.map(({ assignment, item }) => (
+              <PlacedItemNode
+                key={assignment.id}
+                assignment={assignment}
+                item={item}
+                scale={scale}
+                interactive
+                isSelected={assignment.id === selectedAssignmentId}
+                onSelect={onSelect}
+                onMove={onMove}
+                onTransformEnd={onTransformEnd}
+                registerNode={(id, node) => {
+                  if (node) {
+                    nodeRefs.current.set(id, node)
+                  } else {
+                    nodeRefs.current.delete(id)
+                  }
+                }}
+              />
+            ))}
+          </Group>
+          <Transformer ref={transformerRef} resizeEnabled={false} rotateEnabled />
+        </Layer>
+      </Stage>
+    </div>
   )
 }

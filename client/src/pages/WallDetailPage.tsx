@@ -11,7 +11,8 @@ import {
   useUpdateWallAssignment,
   useDeleteWallAssignment,
 } from '@/hooks/useWallAssignmentMutations'
-import { WallAssignmentCanvas, type PlacedItem } from '@/features/walls/WallAssignmentCanvas'
+import { WallAssignmentCanvas } from '@/features/walls/WallAssignmentCanvas'
+import type { PlacedItem } from '@/features/walls/PlacedItem'
 import { AvailableItemsTray } from '@/features/walls/AvailableItemsTray'
 
 export function WallDetailPage() {
@@ -24,6 +25,7 @@ export function WallDetailPage() {
   const updateAssignment = useUpdateWallAssignment()
   const deleteAssignment = useDeleteWallAssignment()
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null)
+  const [showGrid, setShowGrid] = useState(true)
 
   const isPending = booths.isPending || walls.isPending || items.isPending || wallAssignments.isPending
   const firstError = booths.error ?? walls.error ?? items.error ?? wallAssignments.error
@@ -104,6 +106,18 @@ export function WallDetailPage() {
     })
   }
 
+  const handleTransformEnd = (
+    assignmentId: string,
+    xInches: number,
+    yInches: number,
+    rotationDegrees: number,
+  ) => {
+    updateAssignment.mutate({
+      id: assignmentId,
+      input: { 'X Position': xInches, 'Y Position': yInches, 'Rotation Angle': rotationDegrees },
+    })
+  }
+
   const handleRemove = () => {
     if (!selectedAssignmentId) {
       return
@@ -124,23 +138,26 @@ export function WallDetailPage() {
       />
       <h1>{wallName}</h1>
 
-      {selectedAssignmentId && (
-        <div className="wall-editor-toolbar">
+      <div className="wall-editor-toolbar">
+        <button type="button" onClick={() => setShowGrid((prev) => !prev)}>
+          {showGrid ? 'Hide gridlines' : 'Show gridlines'}
+        </button>
+        {selectedAssignmentId && (
           <button type="button" onClick={handleRemove} disabled={deleteAssignment.isPending}>
             {deleteAssignment.isPending ? 'Removing…' : 'Remove from wall'}
           </button>
-        </div>
-      )}
-
-      <div className="wall-editor-canvas">
-        <WallAssignmentCanvas
-          wall={wall}
-          placedItems={placedItems}
-          selectedAssignmentId={selectedAssignmentId}
-          onSelect={setSelectedAssignmentId}
-          onMove={handleMove}
-        />
+        )}
       </div>
+
+      <WallAssignmentCanvas
+        wall={wall}
+        placedItems={placedItems}
+        selectedAssignmentId={selectedAssignmentId}
+        onSelect={setSelectedAssignmentId}
+        onMove={handleMove}
+        onTransformEnd={handleTransformEnd}
+        showGrid={showGrid}
+      />
 
       <section>
         <h2>Add an item</h2>

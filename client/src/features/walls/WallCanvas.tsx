@@ -1,11 +1,19 @@
 import { Link } from 'react-router-dom'
-import { Stage, Layer, Rect, Text } from 'react-konva'
+import { Stage, Layer, Rect } from 'react-konva'
 import type { Wall } from '@shared'
 import { wallDimensionToInches } from '@/features/walls/wallScale'
+import { PlacedItemNode } from '@/features/walls/PlacedItemNode'
+import type { PlacedItem } from '@/features/walls/PlacedItem'
 
 const CONTAINER_SIZE = 260
 
-export function WallCanvas({ wall, boothId }: { wall: Wall; boothId: string }) {
+interface WallCanvasProps {
+  wall: Wall
+  boothId: string
+  placedItems: PlacedItem[]
+}
+
+export function WallCanvas({ wall, boothId, placedItems }: WallCanvasProps) {
   const fields = wall.fields
   const name = fields['Wall Name'] ?? 'Untitled wall'
   const widthInches = fields.Width
@@ -46,7 +54,9 @@ export function WallCanvas({ wall, boothId }: { wall: Wall; boothId: string }) {
               stroke="#71717a"
               strokeWidth={1}
             />
-            <Text text={name} x={8} y={8} fontSize={13} fill="#18181b" />
+            {placedItems.map(({ assignment, item }) => (
+              <PlacedItemNode key={assignment.id} assignment={assignment} item={item} scale={scale} />
+            ))}
           </Layer>
         </Stage>
       </div>
