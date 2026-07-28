@@ -17,5 +17,10 @@ export const boothSchema = z.object({
   fields: boothFieldsSchema,
 })
 
+export const createBoothInputSchema = boothFieldsSchema
+  .omit({ Walls: true })
+  .extend({ 'Booth Name': z.string().min(1, 'Booth Name is required') })
+
 export type BoothFields = z.infer<typeof boothFieldsSchema>
 export type Booth = z.infer<typeof boothSchema>
+export type CreateBoothInput = z.infer<typeof createBoothInputSchema>

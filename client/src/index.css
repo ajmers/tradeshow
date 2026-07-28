@@ -249,6 +249,36 @@ dialog.item-dialog textarea {
   gap: 0.75rem;
 }
 
+.item-dialog__row--2col {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+dialog.item-dialog input[type='color'] {
+  padding: 0.15rem;
+  height: 2.25rem;
+}
+
+.wall-color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4375rem;
+  margin-top: 0.375rem;
+}
+
+.wall-color-swatch {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  border: 1px solid light-dark(#d4d4d8, #3f3f46);
+  padding: 0;
+  cursor: pointer;
+}
+
+.wall-color-swatch--selected {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}
+
 .item-dialog__error {
   color: light-dark(#b91c1c, #f87171);
   margin: 0;
@@ -393,6 +423,14 @@ main section + section {
 
 .breadcrumb a:hover {
   text-decoration: underline;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
 }
 
 .wall-editor-toolbar {
