@@ -54,8 +54,14 @@ export function WallCanvas({ wall, boothId, placedItems }: WallCanvasProps) {
               stroke="#71717a"
               strokeWidth={1}
             />
-            {placedItems.map(({ assignment, item }) => (
-              <PlacedItemNode key={assignment.id} assignment={assignment} item={item} scale={scale} />
+            {placedItems.map(({ assignment, item, isSold }) => (
+              <PlacedItemNode
+                key={assignment.id}
+                assignment={assignment}
+                item={item}
+                scale={scale}
+                isSold={isSold}
+              />
             ))}
           </Layer>
         </Stage>

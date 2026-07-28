@@ -12,11 +12,13 @@
     "build": "pnpm --filter server build && pnpm --filter client build",
     "start": "pnpm --filter server start",
     "typecheck": "pnpm --filter server typecheck && pnpm --filter client typecheck",
+    "typecheck:api": "pnpm --filter server build && tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/node": "^26.1.2",
     "concurrently": "^10.0.4",
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.1.8",

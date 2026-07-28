@@ -1,0 +1,154 @@
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import type { PlacedItem } from '@/features/walls/PlacedItem'
+import { getItemImageUrl } from '@/features/items/getItemImageUrl'
+import { useDeleteWallAssignment } from '@/hooks/useWallAssignmentMutations'
+import { useCreateSale } from '@/hooks/useSaleMutations'
+
+interface ItemDetailDialogProps {
+  placedItem: PlacedItem
+  boothId: string
+  onClose: () => void
+}
+
+export function ItemDetailDialog({ placedItem, boothId, onClose }: ItemDetailDialogProps) {
+  const dialogRef = useRef<HTMLDialogElement>(null)
+  const [mode, setMode] = useState<'details' | 'sell'>('details')
+  const [salePrice, setSalePrice] = useState('')
+  const [saleNotes, setSaleNotes] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+
+  const deleteAssignment = useDeleteWallAssignment()
+  const createSale = useCreateSale()
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog) {
+      return
+    }
+    dialog.showModal()
+    const handleClose = () => onClose()
+    dialog.addEventListener('close', handleClose)
+    return () => dialog.removeEventListener('close', handleClose)
+  }, [onClose])
+
+  const { item, assignment } = placedItem
+  const fields = item.fields
+  const imageUrl = getItemImageUrl(item)
+  const title = fields.Title ?? 'Untitled'
+
+  const handleRemove = () => {
+    if (!window.confirm(`Remove "${title}" from the wall?`)) {
+      return
+    }
+    deleteAssignment.mutate(assignment.id, {
+      onSuccess: () => dialogRef.current?.close(),
+    })
+  }
+
+  const handleSell = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setError(null)
+    setSubmitting(true)
+    try {
+      await createSale.mutateAsync({
+        'Sale Price': salePrice ? Number(salePrice) : undefined,
+        'Date Sold': new Date().toISOString().slice(0, 10),
+        Venue: [boothId],
+        'Sale Notes': saleNotes || undefined,
+        'Items (Sale History Link)': [item.id],
+      })
+      dialogRef.current?.close()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <dialog ref={dialogRef} className="item-detail-dialog">
+      <button
+        type="button"
+        className="item-detail__close"
+        onClick={() => dialogRef.current?.close()}
+        aria-label="Close"
+      >
+        ×
+      </button>
+      {mode === 'details' ? (
+        <div className="item-detail">
+          {imageUrl ? (
+            <img src={imageUrl} alt={title} />
+          ) : (
+            <div className="item-detail__placeholder" aria-hidden="true" />
+          )}
+          <h2>{title}</h2>
+          {fields.Artist && <p className="item-detail__artist">{fields.Artist}</p>}
+          {(fields.Height ?? fields.Width) && (
+            <p className="item-detail__dimensions">
+              {fields.Height ?? '?'} × {fields.Width ?? '?'}
+              {fields.Depth ? ` × ${fields.Depth}` : ''} {fields['Unit of Measure'] ?? ''}
+            </p>
+          )}
+          {fields.Condition && (
+            <p>
+              <strong>Condition:</strong> {fields.Condition}
+            </p>
+          )}
+          {fields.Consigner && (
+            <p>
+              <strong>Consigner:</strong> {fields.Consigner}
+            </p>
+          )}
+          {fields.Description && <p className="item-detail__description">{fields.Description}</p>}
+
+          <div className="item-detail__actions">
+            <button type="button" onClick={handleRemove} disabled={deleteAssignment.isPending}>
+              {deleteAssignment.isPending ? 'Removing…' : 'Remove from wall'}
+            </button>
+            <button type="button" onClick={() => setMode('sell')}>
+              Sell
+            </button>
+          </div>
+        </div>
+      ) : (
+        <form className="item-detail" onSubmit={handleSell}>
+          <h2>Sell &quot;{title}&quot;</h2>
+          <label>
+            Sale price
+            <input
+              type="number"
+              step="any"
+              min="0"
+              required
+              value={salePrice}
+              onChange={(event) => setSalePrice(event.target.value)}
+            />
+          </label>
+          <label>
+            Notes
+            <textarea
+              value={saleNotes}
+              onChange={(event) => setSaleNotes(event.target.value)}
+              rows={3}
+            />
+          </label>
+          {error && (
+            <p role="alert" className="item-detail__error">
+              {error}
+            </p>
+          )}
+          <div className="item-detail__actions">
+            <button type="button" onClick={() => setMode('details')} disabled={submitting}>
+              Back
+            </button>
+            <button type="submit" disabled={submitting}>
+              {submitting ? 'Recording sale…' : 'Confirm sale'}
+            </button>
+          </div>
+        </form>
+      )}
+    </dialog>
+  )
+}

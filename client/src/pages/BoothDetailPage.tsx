@@ -4,6 +4,7 @@ import { useBooths } from '@/hooks/useBooths'
 import { useWalls } from '@/hooks/useWalls'
 import { useItems } from '@/hooks/useItems'
 import { useWallAssignments } from '@/hooks/useWallAssignments'
+import { useSales } from '@/hooks/useSales'
 import { WallsGrid, type WallWithPlacements } from '@/features/walls/WallsGrid'
 import type { PlacedItem } from '@/features/walls/PlacedItem'
 
@@ -13,9 +14,11 @@ export function BoothDetailPage() {
   const walls = useWalls()
   const items = useItems()
   const wallAssignments = useWallAssignments()
+  const sales = useSales()
 
-  const isPending = booths.isPending || walls.isPending || items.isPending || wallAssignments.isPending
-  const firstError = booths.error ?? walls.error ?? items.error ?? wallAssignments.error
+  const isPending =
+    booths.isPending || walls.isPending || items.isPending || wallAssignments.isPending || sales.isPending
+  const firstError = booths.error ?? walls.error ?? items.error ?? wallAssignments.error ?? sales.error
 
   if (isPending) {
     return <p>Loading…</p>
@@ -29,6 +32,7 @@ export function BoothDetailPage() {
   const wallsData = walls.data ?? []
   const itemsData = items.data ?? []
   const wallAssignmentsData = wallAssignments.data ?? []
+  const salesData = sales.data ?? []
 
   const booth = boothsData.find((entry) => entry.id === boothId)
 
@@ -47,13 +51,16 @@ export function BoothDetailPage() {
   const boothAssignments = wallAssignmentsData.filter((assignment) =>
     wallIds.has(assignment.fields.Wall?.[0] ?? ''),
   )
+  const soldItemIds = new Set(
+    salesData.flatMap((sale) => sale.fields['Items (Sale History Link)'] ?? []),
+  )
 
   const wallsWithPlacements: WallWithPlacements[] = boothWalls.map((wall) => {
     const placedItems: PlacedItem[] = boothAssignments
       .filter((assignment) => assignment.fields.Wall?.[0] === wall.id)
       .map((assignment) => {
         const item = itemsData.find((entry) => entry.id === assignment.fields.Painting?.[0])
-        return item ? { assignment, item } : null
+        return item ? { assignment, item, isSold: soldItemIds.has(item.id) } : null
       })
       .filter((entry): entry is PlacedItem => entry !== null)
     return { wall, placedItems }
