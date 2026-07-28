@@ -12,6 +12,7 @@ interface PlacedItemNodeProps {
   item: Item
   scale: number
   isSelected?: boolean
+  isSold?: boolean
   interactive?: boolean
   onSelect?: (assignmentId: string) => void
   onMove?: (assignmentId: string, xInches: number, yInches: number) => void
@@ -29,6 +30,7 @@ export function PlacedItemNode({
   item,
   scale,
   isSelected = false,
+  isSold = false,
   interactive = false,
   onSelect,
   onMove,
@@ -115,6 +117,28 @@ export function PlacedItemNode({
           />
         </>
       )}
+      {isSold &&
+        (() => {
+          const badgeWidth = Math.min(40, w)
+          const badgeHeight = Math.min(16, h)
+          return (
+            <>
+              <Rect x={w - badgeWidth} y={0} width={badgeWidth} height={badgeHeight} fill="#dc2626" />
+              <Text
+                text="SOLD"
+                x={w - badgeWidth}
+                y={0}
+                width={badgeWidth}
+                height={badgeHeight}
+                align="center"
+                verticalAlign="middle"
+                fontSize={9}
+                fontStyle="bold"
+                fill="#fff"
+              />
+            </>
+          )
+        })()}
     </Group>
   )
 }
