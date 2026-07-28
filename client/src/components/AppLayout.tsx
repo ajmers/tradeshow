@@ -1,4 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import { useAuth } from '@/hooks/useAuth'
+import { SignOutButton } from '@/features/auth/SignOutButton'
 
 const navItems = [
   { to: '/', label: 'Gallery', end: true },
@@ -6,6 +8,8 @@ const navItems = [
 ]
 
 export function AppLayout() {
+  const { session } = useAuth()
+
   return (
     <div className="app-layout">
       <nav className="app-nav">
@@ -18,6 +22,10 @@ export function AppLayout() {
             </li>
           ))}
         </ul>
+        <div className="app-nav__footer">
+          {session?.user.email && <p className="app-nav__email">{session.user.email}</p>}
+          <SignOutButton />
+        </div>
       </nav>
       <div className="app-content">
         <Outlet />

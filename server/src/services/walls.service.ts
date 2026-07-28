@@ -3,7 +3,7 @@ import { listAllRecords } from '@/lib/airtable'
 
 const TABLE = 'Walls'
 
-export async function listWalls(): Promise<Wall[]> {
-  const records = await listAllRecords<WallFields>(TABLE)
+export async function listWalls(baseId: string): Promise<Wall[]> {
+  const records = await listAllRecords<WallFields>(baseId, TABLE)
   return records.map((record) => wallSchema.parse(record))
 }

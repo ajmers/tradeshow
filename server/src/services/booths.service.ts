@@ -3,7 +3,7 @@ import { listAllRecords } from '@/lib/airtable'
 
 const TABLE = 'Booths'
 
-export async function listBooths(): Promise<Booth[]> {
-  const records = await listAllRecords<BoothFields>(TABLE)
+export async function listBooths(baseId: string): Promise<Booth[]> {
+  const records = await listAllRecords<BoothFields>(baseId, TABLE)
   return records.map((record) => boothSchema.parse(record))
 }

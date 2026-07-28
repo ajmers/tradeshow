@@ -6,6 +6,7 @@ import {
   type UpdateItemInput,
   type UploadItemPhotoInput,
 } from '@shared'
+import { apiFetch } from '@/lib/apiFetch'
 
 async function parseJsonOrThrow<T>(res: Response, schema: z.ZodType<T>, action: string): Promise<T> {
   if (!res.ok) {
@@ -16,12 +17,12 @@ async function parseJsonOrThrow<T>(res: Response, schema: z.ZodType<T>, action: 
 }
 
 export async function fetchItems(): Promise<Item[]> {
-  const res = await fetch('/api/items')
+  const res = await apiFetch('/api/items')
   return parseJsonOrThrow(res, z.array(itemSchema), 'Fetching items')
 }
 
 export async function createItem(input: CreateItemInput): Promise<Item> {
-  const res = await fetch('/api/items', {
+  const res = await apiFetch('/api/items', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
@@ -30,7 +31,7 @@ export async function createItem(input: CreateItemInput): Promise<Item> {
 }
 
 export async function updateItem(id: string, input: UpdateItemInput): Promise<Item> {
-  const res = await fetch(`/api/items/${id}`, {
+  const res = await apiFetch(`/api/items/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
@@ -39,14 +40,14 @@ export async function updateItem(id: string, input: UpdateItemInput): Promise<It
 }
 
 export async function deleteItem(id: string): Promise<void> {
-  const res = await fetch(`/api/items/${id}`, { method: 'DELETE' })
+  const res = await apiFetch(`/api/items/${id}`, { method: 'DELETE' })
   if (!res.ok) {
     throw new Error(`Deleting item failed: ${res.status}`)
   }
 }
 
 export async function uploadItemPhoto(id: string, input: UploadItemPhotoInput): Promise<Item> {
-  const res = await fetch(`/api/items/${id}/photos`, {
+  const res = await apiFetch(`/api/items/${id}/photos`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),

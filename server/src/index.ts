@@ -9,6 +9,7 @@ import { healthRoute } from '@/routes/health'
 import { itemsRoute } from '@/routes/items'
 import { wallsRoute } from '@/routes/walls'
 import { boothsRoute } from '@/routes/booths'
+import { wallAssignmentsRoute } from '@/routes/wall-assignments'
 
 const app = new Hono()
 
@@ -27,6 +28,7 @@ app.route('/api/health', healthRoute)
 app.route('/api/items', itemsRoute)
 app.route('/api/walls', wallsRoute)
 app.route('/api/booths', boothsRoute)
+app.route('/api/wall-assignments', wallAssignmentsRoute)
 
 if (env.NODE_ENV === 'production') {
   const clientDist = '../client/dist'

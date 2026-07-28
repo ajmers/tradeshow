@@ -1,30 +1,29 @@
+import { Link } from 'react-router-dom'
 import { Stage, Layer, Rect, Text } from 'react-konva'
 import type { Wall } from '@shared'
+import { wallDimensionToInches } from '@/features/walls/wallScale'
 
 const CONTAINER_SIZE = 260
-const INCHES_PER_CM = 0.393701
 
-function toInches(value: number, unit: string | undefined): number {
-  if (unit === 'centimeters' || unit === 'cm') {
-    return value * INCHES_PER_CM
-  }
-  return value
-}
-
-export function WallCanvas({ wall }: { wall: Wall }) {
+export function WallCanvas({ wall, boothId }: { wall: Wall; boothId: string }) {
   const fields = wall.fields
   const name = fields['Wall Name'] ?? 'Untitled wall'
-  const widthInches = fields.Width ? toInches(fields.Width, fields['Unit of Measure']) : undefined
-  const heightInches = fields.Height ? toInches(fields.Height, fields['Unit of Measure']) : undefined
+  const widthInches = fields.Width
+    ? wallDimensionToInches(fields.Width, fields['Unit of Measure'])
+    : undefined
+  const heightInches = fields.Height
+    ? wallDimensionToInches(fields.Height, fields['Unit of Measure'])
+    : undefined
+  const to = `/booth-planner/${boothId}/walls/${wall.id}`
 
   if (!widthInches || !heightInches) {
     return (
-      <div className="wall-card">
+      <Link to={to} className="wall-card">
         <div className="wall-card__canvas wall-card__canvas--empty">No dimensions set</div>
         <div className="wall-card__caption">
           <strong>{name}</strong>
         </div>
-      </div>
+      </Link>
     )
   }
 
@@ -34,9 +33,9 @@ export function WallCanvas({ wall }: { wall: Wall }) {
   const fill = fields['Wall Color']?.trim() || '#e4e4e7'
 
   return (
-    <div className="wall-card">
+    <Link to={to} className="wall-card">
       <div className="wall-card__canvas" style={{ width: CONTAINER_SIZE, height: CONTAINER_SIZE }}>
-        <Stage width={stageWidth} height={stageHeight}>
+        <Stage width={stageWidth} height={stageHeight} listening={false}>
           <Layer>
             <Rect
               x={0}
@@ -54,9 +53,9 @@ export function WallCanvas({ wall }: { wall: Wall }) {
       <div className="wall-card__caption">
         <strong>{name}</strong>
         <span>
-          {fields.Height} × {fields.Width} {fields['Unit of Measure'] ?? ''}
+          {fields.Height} × {fields.Width} {fields['Unit of Measure'] ?? 'ft'}
         </span>
       </div>
-    </div>
+    </Link>
   )
 }

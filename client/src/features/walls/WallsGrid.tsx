@@ -1,7 +1,7 @@
 import type { Wall } from '@shared'
 import { WallCanvas } from '@/features/walls/WallCanvas'
 
-export function WallsGrid({ walls }: { walls: Wall[] }) {
+export function WallsGrid({ walls, boothId }: { walls: Wall[]; boothId: string }) {
   if (walls.length === 0) {
     return <p>No walls for this booth yet.</p>
   }
@@ -9,7 +9,7 @@ export function WallsGrid({ walls }: { walls: Wall[] }) {
   return (
     <div className="walls-grid">
       {walls.map((wall) => (
-        <WallCanvas key={wall.id} wall={wall} />
+        <WallCanvas key={wall.id} wall={wall} boothId={boothId} />
       ))}
     </div>
   )

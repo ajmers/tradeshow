@@ -41,7 +41,7 @@ export function BoothDetailPage() {
         <h2>Walls</h2>
         {walls.isPending && <p>Loading walls…</p>}
         {walls.isError && <p role="alert">Error loading walls: {walls.error.message}</p>}
-        {walls.isSuccess && <WallsGrid walls={boothWalls} />}
+        {walls.isSuccess && <WallsGrid walls={boothWalls} boothId={booth.id} />}
       </section>
     </main>
   )

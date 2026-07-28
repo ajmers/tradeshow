@@ -1,8 +1,9 @@
 import { z } from 'zod'
 import { wallSchema, type Wall } from '@shared'
+import { apiFetch } from '@/lib/apiFetch'
 
 export async function fetchWalls(): Promise<Wall[]> {
-  const res = await fetch('/api/walls')
+  const res = await apiFetch('/api/walls')
   if (!res.ok) {
     throw new Error(`Failed to fetch walls: ${res.status}`)
   }

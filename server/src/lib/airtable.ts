@@ -32,11 +32,14 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>
 }
 
-async function airtableFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  return request<T>(`${AIRTABLE_API_URL}/${env.AIRTABLE_BASE_ID}${path}`, init)
+async function airtableFetch<T>(baseId: string, path: string, init?: RequestInit): Promise<T> {
+  return request<T>(`${AIRTABLE_API_URL}/${baseId}${path}`, init)
 }
 
-export async function listAllRecords<Fields>(table: string): Promise<Array<AirtableRecord<Fields>>> {
+export async function listAllRecords<Fields>(
+  baseId: string,
+  table: string,
+): Promise<Array<AirtableRecord<Fields>>> {
   const records: Array<AirtableRecord<Fields>> = []
   let offset: string | undefined
 
@@ -46,6 +49,7 @@ export async function listAllRecords<Fields>(table: string): Promise<Array<Airta
       params.set('offset', offset)
     }
     const page = await airtableFetch<AirtableListResponse<Fields>>(
+      baseId,
       `/${encodeURIComponent(table)}?${params.toString()}`,
     )
     records.push(...page.records)
@@ -55,33 +59,39 @@ export async function listAllRecords<Fields>(table: string): Promise<Array<Airta
   return records
 }
 
-export async function getRecord<Fields>(table: string, id: string): Promise<AirtableRecord<Fields>> {
-  return airtableFetch<AirtableRecord<Fields>>(`/${encodeURIComponent(table)}/${id}`)
+export async function getRecord<Fields>(
+  baseId: string,
+  table: string,
+  id: string,
+): Promise<AirtableRecord<Fields>> {
+  return airtableFetch<AirtableRecord<Fields>>(baseId, `/${encodeURIComponent(table)}/${id}`)
 }
 
 export async function createRecord<Fields>(
+  baseId: string,
   table: string,
   fields: Partial<Fields>,
 ): Promise<AirtableRecord<Fields>> {
-  return airtableFetch<AirtableRecord<Fields>>(`/${encodeURIComponent(table)}`, {
+  return airtableFetch<AirtableRecord<Fields>>(baseId, `/${encodeURIComponent(table)}`, {
     method: 'POST',
     body: JSON.stringify({ fields }),
   })
 }
 
 export async function updateRecord<Fields>(
+  baseId: string,
   table: string,
   id: string,
   fields: Partial<Fields>,
 ): Promise<AirtableRecord<Fields>> {
-  return airtableFetch<AirtableRecord<Fields>>(`/${encodeURIComponent(table)}/${id}`, {
+  return airtableFetch<AirtableRecord<Fields>>(baseId, `/${encodeURIComponent(table)}/${id}`, {
     method: 'PATCH',
     body: JSON.stringify({ fields }),
   })
 }
 
-export async function deleteRecord(table: string, id: string): Promise<void> {
-  await airtableFetch<{ id: string; deleted: boolean }>(`/${encodeURIComponent(table)}/${id}`, {
+export async function deleteRecord(baseId: string, table: string, id: string): Promise<void> {
+  await airtableFetch<{ id: string; deleted: boolean }>(baseId, `/${encodeURIComponent(table)}/${id}`, {
     method: 'DELETE',
   })
 }
@@ -99,12 +109,13 @@ export interface AirtableAttachmentUpload {
  * trusting this response shape.
  */
 export async function uploadAttachment(
+  baseId: string,
   recordId: string,
   fieldName: string,
   attachment: AirtableAttachmentUpload,
 ): Promise<void> {
   await request(
-    `${AIRTABLE_CONTENT_API_URL}/${env.AIRTABLE_BASE_ID}/${recordId}/${encodeURIComponent(fieldName)}/uploadAttachment`,
+    `${AIRTABLE_CONTENT_API_URL}/${baseId}/${recordId}/${encodeURIComponent(fieldName)}/uploadAttachment`,
     {
       method: 'POST',
       body: JSON.stringify(attachment),

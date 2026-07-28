@@ -1,5 +1,6 @@
 import type { Item } from '@shared'
 import { useDeleteItem } from '@/hooks/useItemMutations'
+import { getItemImageUrl } from '@/features/items/getItemImageUrl'
 
 interface ItemCardProps {
   item: Item
@@ -8,8 +9,7 @@ interface ItemCardProps {
 
 export function ItemCard({ item, onEdit }: ItemCardProps) {
   const fields = item.fields
-  const image = fields['cropped image']?.[0] || fields.Images?.[0]
-  const imageUrl = image?.thumbnails?.large?.url ?? image?.url
+  const imageUrl = getItemImageUrl(item)
   const deleteItem = useDeleteItem()
 
   function handleDelete() {

@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from 'react-router-dom'
 import { router } from '@/routes'
+import { AuthProvider } from '@/features/auth/AuthProvider'
+import { AuthGate } from '@/features/auth/AuthGate'
 import '@/index.css'
 
 const queryClient = new QueryClient()
@@ -14,8 +16,12 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
+    <AuthProvider>
+      <AuthGate>
+        <QueryClientProvider client={queryClient}>
+          <RouterProvider router={router} />
+        </QueryClientProvider>
+      </AuthGate>
+    </AuthProvider>
   </StrictMode>,
 )
