@@ -1,8 +1,16 @@
 import { z } from 'zod'
 
+try {
+  process.loadEnvFile()
+} catch {
+  // no .env file present; rely on real environment variables (e.g. in production)
+}
+
 const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3000),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  AIRTABLE_PAT: z.string().min(1, 'AIRTABLE_PAT is required'),
+  AIRTABLE_BASE_ID: z.string().min(1, 'AIRTABLE_BASE_ID is required'),
 })
 
 export const env = envSchema.parse(process.env)
