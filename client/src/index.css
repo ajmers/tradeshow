@@ -60,9 +60,19 @@ body {
   font-weight: 600;
 }
 
-.app-nav__footer {
+.app-nav__status {
   margin-top: auto;
   padding-top: 1rem;
+  font-size: 0.8125rem;
+}
+
+.app-nav__status .card {
+  padding: 0.5rem 0.75rem;
+}
+
+.app-nav__footer {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
   border-top: 1px solid light-dark(#d4d4d8, #3f3f46);
 }
 

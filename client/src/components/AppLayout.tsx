@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { HealthStatus } from '@/features/health/HealthStatus'
 import { SignOutButton } from '@/features/auth/SignOutButton'
 
 const navItems = [
@@ -22,6 +23,9 @@ export function AppLayout() {
             </li>
           ))}
         </ul>
+        <div className="app-nav__status">
+          <HealthStatus />
+        </div>
         <div className="app-nav__footer">
           {session?.user.email && <p className="app-nav__email">{session.user.email}</p>}
           <SignOutButton />
