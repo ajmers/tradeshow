@@ -9,6 +9,8 @@ export const boothFieldsSchema = z.object({
   Organizer: z.string().optional(),
   Notes: z.string().optional(),
   Walls: z.array(z.string()).optional(),
+  'Wall Assignments': z.array(z.string()).optional(),
+  Sales: z.array(z.string()).optional(),
 })
 
 export const boothSchema = z.object({

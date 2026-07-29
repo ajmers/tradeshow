@@ -8,6 +8,7 @@ import { useWallAssignments } from '@/hooks/useWallAssignments'
 import { useSales } from '@/hooks/useSales'
 import { WallsGrid, type WallWithPlacements } from '@/features/walls/WallsGrid'
 import { WallFormDialog } from '@/features/walls/WallFormDialog'
+import { BoothReportDialog } from '@/features/booths/BoothReportDialog'
 import type { PlacedItem } from '@/features/walls/PlacedItem'
 
 export function BoothDetailPage() {
@@ -18,6 +19,7 @@ export function BoothDetailPage() {
   const wallAssignments = useWallAssignments()
   const sales = useSales()
   const [showAddWall, setShowAddWall] = useState(false)
+  const [showReport, setShowReport] = useState(false)
 
   const isPending =
     booths.isPending || walls.isPending || items.isPending || wallAssignments.isPending || sales.isPending
@@ -72,7 +74,12 @@ export function BoothDetailPage() {
   return (
     <main>
       <Breadcrumb items={[{ label: 'Booth Planner', to: '/booth-planner' }, { label: boothName }]} />
-      <h1>{boothName}</h1>
+      <div className="page-toolbar">
+        <h1>{boothName}</h1>
+        <button type="button" onClick={() => setShowReport(true)}>
+          Run Booth Report
+        </button>
+      </div>
 
       <section>
         <div className="page-toolbar">
@@ -87,6 +94,8 @@ export function BoothDetailPage() {
       {showAddWall && (
         <WallFormDialog boothId={booth.id} onClose={() => setShowAddWall(false)} />
       )}
+
+      {showReport && <BoothReportDialog booth={booth} onClose={() => setShowReport(false)} />}
     </main>
   )
 }

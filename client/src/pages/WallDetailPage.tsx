@@ -13,10 +13,13 @@ import {
 } from '@/hooks/useWallAssignmentMutations'
 import { useUpdateWall } from '@/hooks/useWallMutations'
 import { WallAssignmentCanvas } from '@/features/walls/WallAssignmentCanvas'
+import { WallDimensionsEditor } from '@/features/walls/WallDimensionsEditor'
 import { WallInventory } from '@/features/walls/WallInventory'
 import { ItemDetailDialog } from '@/features/walls/ItemDetailDialog'
 import type { PlacedItem } from '@/features/walls/PlacedItem'
 import { AvailableItemsTray } from '@/features/walls/AvailableItemsTray'
+import { findEmptySpot } from '@/features/walls/findEmptySpot'
+import { itemFootprintInches, wallDimensionToInches } from '@/features/walls/wallScale'
 
 export function WallDetailPage() {
   const { boothId, wallId } = useParams<{ boothId: string; wallId: string }>()
@@ -32,6 +35,7 @@ export function WallDetailPage() {
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null)
   const [detailAssignmentId, setDetailAssignmentId] = useState<string | null>(null)
   const [showGrid, setShowGrid] = useState(true)
+  const [useSmartPlacement, setUseSmartPlacement] = useState(false)
 
   // Delete/Backspace removes the selected item directly from the canvas. Only active
   // while the detail dialog is closed, so it never fights with typing in the Sell form.
@@ -117,9 +121,49 @@ export function WallDetailPage() {
     if (!item) {
       return
     }
+
+    const { width: itemWidthInches, height: itemHeightInches } = itemFootprintInches(item.fields)
+    const wallWidthInches = wall.fields.Width
+      ? wallDimensionToInches(wall.fields.Width, wall.fields['Unit of Measure'])
+      : undefined
+    const wallHeightInches = wall.fields.Height
+      ? wallDimensionToInches(wall.fields.Height, wall.fields['Unit of Measure'])
+      : undefined
+
+    const spot =
+      useSmartPlacement && wallWidthInches && wallHeightInches
+        ? findEmptySpot(
+            wallWidthInches,
+            wallHeightInches,
+            itemWidthInches,
+            itemHeightInches,
+            thisWallAssignments
+              .map((assignment) => {
+                const placedItem = itemsData.find(
+                  (entry) => entry.id === assignment.fields.Painting?.[0],
+                )
+                if (!placedItem) {
+                  return null
+                }
+                const footprint = itemFootprintInches(placedItem.fields)
+                return {
+                  x: assignment.fields['X Position'] ?? 0,
+                  y: assignment.fields['Y Position'] ?? 0,
+                  width: footprint.width,
+                  height: footprint.height,
+                  rotationDegrees: assignment.fields['Rotation Angle'] ?? 0,
+                }
+              })
+              .filter((entry): entry is NonNullable<typeof entry> => entry !== null),
+          )
+        : null
+
+    // Falls back to a simple wrapping grid when nothing empty was found (wall fully
+    // packed, item too big to fit anywhere, or the wall has no dimensions set yet).
     const count = thisWallAssignments.length
-    const x = 1 + (count % 5) * 1.5
-    const y = 1 + Math.floor(count / 5) * 1.5
+    const x = spot?.x ?? 1 + (count % 5) * 1.5
+    const y = spot?.y ?? 1 + Math.floor(count / 5) * 1.5
+
     createAssignment.mutate({
       Assignment: `${item.fields.Title ?? 'Item'} on ${wallName}`,
       Wall: [wall.id],
@@ -185,66 +229,7 @@ export function WallDetailPage() {
       <div className="wall-editor-toolbar">
         <div>
           <h1>{wallName}</h1>
-          <div className="wall-editor-dimensions" key={wall.id}>
-            <input
-              type="number"
-              step="any"
-              min="0"
-              defaultValue={wall.fields.Height ?? ''}
-              aria-label="Wall height"
-              onBlur={(event) => {
-                const raw = event.target.value.trim()
-                if (raw === '') {
-                  event.target.value = wall.fields.Height !== undefined ? String(wall.fields.Height) : ''
-                  return
-                }
-                const value = Number(raw)
-                if (Number.isNaN(value) || value === wall.fields.Height) {
-                  return
-                }
-                updateWall.mutate({ id: wall.id, input: { Height: value } })
-              }}
-            />
-            <span>×</span>
-            <input
-              type="number"
-              step="any"
-              min="0"
-              defaultValue={wall.fields.Width ?? ''}
-              aria-label="Wall width"
-              onBlur={(event) => {
-                const raw = event.target.value.trim()
-                if (raw === '') {
-                  event.target.value = wall.fields.Width !== undefined ? String(wall.fields.Width) : ''
-                  return
-                }
-                const value = Number(raw)
-                if (Number.isNaN(value) || value === wall.fields.Width) {
-                  return
-                }
-                updateWall.mutate({ id: wall.id, input: { Width: value } })
-              }}
-            />
-            <select
-              defaultValue={wall.fields['Unit of Measure'] ?? ''}
-              aria-label="Unit of measure"
-              onChange={(event) => {
-                const value = event.target.value
-                if (!value) {
-                  return
-                }
-                updateWall.mutate({
-                  id: wall.id,
-                  input: { 'Unit of Measure': value as 'inches' | 'centimeters' | 'cm' },
-                })
-              }}
-            >
-              <option value="">ft</option>
-              <option value="inches">inches</option>
-              <option value="centimeters">centimeters</option>
-              <option value="cm">cm</option>
-            </select>
-          </div>
+          <WallDimensionsEditor wall={wall} key={wall.id} />
         </div>
         <div className="wall-editor-toolbar__controls">
           <label className="wall-editor-color-picker">
@@ -281,6 +266,21 @@ export function WallDetailPage() {
       />
 
       <section>
+        <label className="wall-editor-smart-placement">
+          <input
+            type="checkbox"
+            checked={useSmartPlacement}
+            onChange={(event) => setUseSmartPlacement(event.target.checked)}
+          />
+          Place in empty spot
+          <span
+            className="wall-editor-tooltip"
+            tabIndex={0}
+            title="Scans the wall for free space before placing the item, instead of using the default grid layout."
+          >
+            ?
+          </span>
+        </label>
         <h2>Available items</h2>
         <AvailableItemsTray items={availableItems} onSelect={handleAddItem} />
       </section>

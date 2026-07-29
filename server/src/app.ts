@@ -10,6 +10,7 @@ import { wallsRoute } from '@/routes/walls'
 import { boothsRoute } from '@/routes/booths'
 import { wallAssignmentsRoute } from '@/routes/wall-assignments'
 import { salesRoute } from '@/routes/sales'
+import { consignersRoute } from '@/routes/consigners'
 
 export const app = new Hono()
 
@@ -32,3 +33,4 @@ app.route('/api/walls', wallsRoute)
 app.route('/api/booths', boothsRoute)
 app.route('/api/wall-assignments', wallAssignmentsRoute)
 app.route('/api/sales', salesRoute)
+app.route('/api/consigners', consignersRoute)

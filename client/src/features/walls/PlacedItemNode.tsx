@@ -2,10 +2,8 @@ import useImage from 'use-image'
 import type Konva from 'konva'
 import { Group, Rect, Text, Image as KonvaImage } from 'react-konva'
 import type { Item, WallAssignment } from '@shared'
-import { toInches } from '@/features/walls/wallScale'
+import { itemFootprintInches } from '@/features/walls/wallScale'
 import { getItemImageUrl } from '@/features/items/getItemImageUrl'
-
-const DEFAULT_ITEM_INCHES = 6
 
 interface PlacedItemNodeProps {
   assignment: WallAssignment
@@ -39,12 +37,7 @@ export function PlacedItemNode({
 }: PlacedItemNodeProps) {
   const [image] = useImage(getItemImageUrl(item) ?? '')
 
-  const itemWidthInches = item.fields.Width
-    ? toInches(item.fields.Width, item.fields['Unit of Measure'])
-    : DEFAULT_ITEM_INCHES
-  const itemHeightInches = item.fields.Height
-    ? toInches(item.fields.Height, item.fields['Unit of Measure'])
-    : DEFAULT_ITEM_INCHES
+  const { width: itemWidthInches, height: itemHeightInches } = itemFootprintInches(item.fields)
   const w = itemWidthInches * scale
   const h = itemHeightInches * scale
   // Rotation must pivot around the item's center (matching Airtable/every design tool),

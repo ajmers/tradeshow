@@ -407,8 +407,40 @@ main section + section {
   background: light-dark(#f4f4f5, #27272a);
 }
 
+.booth-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
 .booth-card h3 {
   margin: 0 0 0.25rem;
+}
+
+.booth-card__status {
+  flex-shrink: 0;
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 0.125rem 0.5rem;
+  white-space: nowrap;
+}
+
+.booth-card__status--upcoming {
+  background: light-dark(#dbeafe, #1e3a8a);
+  color: light-dark(#1e40af, #bfdbfe);
+}
+
+.booth-card__status--ongoing {
+  background: light-dark(#dcfce7, #14532d);
+  color: light-dark(#166534, #bbf7d0);
+}
+
+.booth-card__status--past {
+  background: light-dark(#e4e4e7, #3f3f46);
+  color: light-dark(#52525b, #a1a1aa);
 }
 
 .booth-card__dates {
@@ -425,19 +457,71 @@ main section + section {
   margin-bottom: 0.5rem;
 }
 
-.booth-card__type {
-  display: inline-block;
-  align-self: flex-start;
-  font-size: 0.75rem;
-  border: 1px solid light-dark(#d4d4d8, #3f3f46);
-  border-radius: 999px;
-  padding: 0.125rem 0.625rem;
+.booth-card__stats {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.8125rem;
+  color: light-dark(#52525b, #a1a1aa);
 }
 
 .booth-card__notes {
   margin: 0.5rem 0 0;
   font-size: 0.875rem;
   color: light-dark(#52525b, #a1a1aa);
+}
+
+.booth-card__report-button {
+  margin-top: 0.75rem;
+  width: 100%;
+  font-size: 0.8125rem;
+}
+
+.booth-report-dialog {
+  width: min(48rem, calc(100vw - 2rem));
+}
+
+.booth-report {
+  padding: 1.5rem;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.booth-report h2 {
+  margin: 0 0 1rem;
+}
+
+.booth-report__table-wrapper {
+  overflow-x: auto;
+}
+
+.booth-report__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.booth-report__table th,
+.booth-report__table td {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid light-dark(#d4d4d8, #3f3f46);
+  white-space: nowrap;
+}
+
+.booth-report__table tbody td:nth-child(3),
+.booth-report__table tbody td:nth-child(5),
+.booth-report__table tbody td:nth-child(6) {
+  text-align: right;
+}
+
+.booth-report__table tfoot th {
+  text-align: right;
+  border-bottom: none;
+  border-top: 2px solid light-dark(#d4d4d8, #3f3f46);
+}
+
+.booth-report__table tfoot th:first-child {
+  text-align: left;
 }
 
 .breadcrumb {
@@ -483,9 +567,71 @@ main section + section {
 }
 
 .wall-editor-dimensions {
-  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.25rem;
   color: light-dark(#52525b, #a1a1aa);
   font-size: 0.9375rem;
+}
+
+.wall-editor-dimensions input[type='number'] {
+  width: 4.5rem;
+  font: inherit;
+  padding: 0.2rem 0.4rem;
+  border: 1px solid light-dark(#d4d4d8, #3f3f46);
+  border-radius: 0.375rem;
+  background: light-dark(#fff, #27272a);
+  color: inherit;
+}
+
+.wall-editor-dimensions select {
+  font: inherit;
+  padding: 0.2rem 0.4rem;
+  border: 1px solid light-dark(#d4d4d8, #3f3f46);
+  border-radius: 0.375rem;
+  background: light-dark(#fff, #27272a);
+  color: inherit;
+}
+
+.wall-editor-dimensions__edit-button {
+  border: none;
+  background: none;
+  padding: 0.125rem 0.25rem;
+  font-size: 0.8125rem;
+  line-height: 1;
+  color: light-dark(#71717a, #a1a1aa);
+}
+
+.wall-editor-dimensions__edit-button:hover {
+  color: inherit;
+  background: light-dark(#f4f4f5, #27272a);
+}
+
+.wall-editor-dimensions--editing button {
+  padding: 0.2rem 0.6rem;
+  font-size: 0.8125rem;
+}
+
+.wall-editor-smart-placement {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.wall-editor-tooltip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 50%;
+  border: 1px solid light-dark(#a1a1aa, #71717a);
+  color: light-dark(#71717a, #a1a1aa);
+  font-size: 0.6875rem;
+  cursor: help;
 }
 
 .wall-editor-toolbar__controls {
@@ -529,8 +675,6 @@ main section + section {
 .wall-editor-canvas {
   display: block;
   max-width: 100%;
-  border: 1px solid light-dark(#d4d4d8, #3f3f46);
-  border-radius: 0.5rem;
   overflow: auto;
   line-height: 0;
   cursor: grab;
