@@ -7,5 +7,5 @@ export const baseRoute = new Hono<AppEnv>()
   .use('*', requireAuth)
   .get('/', async (c) => {
     const info = await getBaseInfo(c.get('airtableBaseId'))
-    return c.json(info)
+    return c.json({ ...info, isAdmin: c.get('isAdmin') })
   })

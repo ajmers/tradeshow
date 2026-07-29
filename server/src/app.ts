@@ -4,6 +4,7 @@ import { ZodError } from 'zod'
 import { responseTime } from '@/middleware/responseTime'
 import { healthRoute } from '@/routes/health'
 import { baseRoute } from '@/routes/base'
+import { adminRoute } from '@/routes/admin'
 import { itemsRoute } from '@/routes/items'
 import { wallsRoute } from '@/routes/walls'
 import { boothsRoute } from '@/routes/booths'
@@ -25,6 +26,7 @@ app.onError((err, c) => {
 
 app.route('/api/health', healthRoute)
 app.route('/api/base', baseRoute)
+app.route('/api/admin', adminRoute)
 app.route('/api/items', itemsRoute)
 app.route('/api/walls', wallsRoute)
 app.route('/api/booths', boothsRoute)

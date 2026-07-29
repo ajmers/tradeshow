@@ -28,6 +28,11 @@ export function AppLayout() {
               </NavLink>
             </li>
           ))}
+          {baseInfo?.isAdmin && (
+            <li>
+              <NavLink to="/admin">Admin</NavLink>
+            </li>
+          )}
         </ul>
         <div className="app-nav__status">
           <HealthStatus />

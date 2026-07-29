@@ -20,6 +20,10 @@ export const router = createBrowserRouter([
         path: 'booth-planner/:boothId/walls/:wallId',
         lazy: () => import('@/pages/WallDetailPage').then((m) => ({ Component: m.WallDetailPage })),
       },
+      {
+        path: 'admin',
+        lazy: () => import('@/pages/AdminPage').then((m) => ({ Component: m.AdminPage })),
+      },
     ],
   },
 ])

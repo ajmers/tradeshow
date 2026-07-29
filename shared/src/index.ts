@@ -1,5 +1,6 @@
 export * from './schemas/health'
 export * from './schemas/base'
+export * from './schemas/admin'
 export * from './schemas/airtable'
 export * from './schemas/item'
 export * from './schemas/wall'

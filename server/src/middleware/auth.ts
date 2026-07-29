@@ -31,5 +31,16 @@ export const requireAuth: MiddlewareHandler<AppEnv> = async (c, next) => {
   }
 
   c.set('airtableBaseId', profile.airtable_base_id)
+  // Admin status lives in the auth user's app_metadata, not `profiles` — that table is
+  // purely the user-to-base link, and app_metadata is only writable via the service-role
+  // admin API, so a user can never grant it to themselves by editing their own row.
+  c.set('isAdmin', userData.user.app_metadata?.is_admin === true)
+  await next()
+}
+
+export const requireAdmin: MiddlewareHandler<AppEnv> = async (c, next) => {
+  if (!c.get('isAdmin')) {
+    return c.json({ error: 'Forbidden' }, 403)
+  }
   await next()
 }
