@@ -1,5 +1,6 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState, type WheelEvent as ReactWheelEvent } from 'react'
 import type Konva from 'konva'
+import type { KonvaEventObject } from 'konva/lib/Node'
 import { Stage, Layer, Rect, Group, Transformer } from 'react-konva'
 import type { Wall } from '@shared'
 import { wallDimensionToInches } from '@/features/walls/wallScale'
@@ -20,6 +21,15 @@ const DEFAULT_AVAILABLE_SIZE = { width: 700, height: 700 }
 // without scrolling on typical viewports.
 const HEIGHT_BUDGET_RATIO = 0.55
 const MIN_HEIGHT_BUDGET = 400
+
+// Zoom is a multiplier on top of the auto-fit scale above, not an absolute pixel value.
+const ZOOM_MIN = 0.5
+const ZOOM_MAX = 3
+const ZOOM_STEP = 0.25
+
+function clampZoom(value: number): number {
+  return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, value))
+}
 
 interface WallAssignmentCanvasProps {
   wall: Wall
@@ -50,6 +60,32 @@ export function WallAssignmentCanvas({
   const containerRef = useRef<HTMLDivElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [availableSize, setAvailableSize] = useState(DEFAULT_AVAILABLE_SIZE)
+  const [zoom, setZoom] = useState(1)
+  // When zoom changes via a button/wheel, this captures where the view was (as a
+  // fraction of scrollable space) so the recentering effect below can restore roughly
+  // the same view instead of snapping back to the middle of the wall every time.
+  const pendingScrollFraction = useRef<{ x: number; y: number } | null>(null)
+
+  function adjustZoom(updater: (current: number) => number) {
+    const container = containerRef.current
+    if (container) {
+      const maxScrollLeft = container.scrollWidth - container.clientWidth
+      const maxScrollTop = container.scrollHeight - container.clientHeight
+      pendingScrollFraction.current = {
+        x: maxScrollLeft > 0 ? container.scrollLeft / maxScrollLeft : 0.5,
+        y: maxScrollTop > 0 ? container.scrollTop / maxScrollTop : 0.5,
+      }
+    }
+    setZoom((current) => clampZoom(updater(current)))
+  }
+
+  function handleWheel(event: ReactWheelEvent<HTMLDivElement>) {
+    if (!event.ctrlKey && !event.metaKey) {
+      return
+    }
+    event.preventDefault()
+    adjustZoom((current) => current + (event.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP))
+  }
 
   const fields = wall.fields
   const widthInches = fields.Width
@@ -94,15 +130,24 @@ export function WallAssignmentCanvas({
     transformer.getLayer()?.batchDraw()
   }, [selectedAssignmentId, placedItems])
 
-  // Center the scroll on the wall itself rather than the top-left corner of the margin.
+  // Center the scroll on the wall itself rather than the top-left corner of the margin —
+  // unless a zoom change just captured where the view was, in which case restore that
+  // instead of snapping back to center.
   useLayoutEffect(() => {
     const container = containerRef.current
     if (!container) {
       return
     }
-    container.scrollLeft = (container.scrollWidth - container.clientWidth) / 2
-    container.scrollTop = (container.scrollHeight - container.clientHeight) / 2
-  }, [wall.id, availableSize])
+    const pending = pendingScrollFraction.current
+    if (pending) {
+      container.scrollLeft = pending.x * (container.scrollWidth - container.clientWidth)
+      container.scrollTop = pending.y * (container.scrollHeight - container.clientHeight)
+      pendingScrollFraction.current = null
+    } else {
+      container.scrollLeft = (container.scrollWidth - container.clientWidth) / 2
+      container.scrollTop = (container.scrollHeight - container.clientHeight) / 2
+    }
+  }, [wall.id, availableSize, zoom])
 
   if (!widthInches || !heightInches) {
     return <p>This wall doesn&apos;t have dimensions set yet.</p>
@@ -114,7 +159,7 @@ export function WallAssignmentCanvas({
     availableSize.width / totalWidthInches,
     availableSize.height / totalHeightInches,
   )
-  const scale = Math.max(MIN_SCALE, fitScale)
+  const scale = Math.max(MIN_SCALE, fitScale) * zoom
 
   const wallWidth = widthInches * scale
   const wallHeight = heightInches * scale
@@ -126,7 +171,28 @@ export function WallAssignmentCanvas({
 
   return (
     <div className="wall-editor-canvas-wrapper" ref={wrapperRef}>
-      <div className="wall-editor-canvas" ref={containerRef}>
+      <div className="wall-editor-zoom">
+        <button
+          type="button"
+          onClick={() => adjustZoom((current) => current - ZOOM_STEP)}
+          disabled={zoom <= ZOOM_MIN}
+          aria-label="Zoom out"
+        >
+          −
+        </button>
+        <button type="button" onClick={() => adjustZoom(() => 1)} title="Reset zoom">
+          {Math.round(zoom * 100)}%
+        </button>
+        <button
+          type="button"
+          onClick={() => adjustZoom((current) => current + ZOOM_STEP)}
+          disabled={zoom >= ZOOM_MAX}
+          aria-label="Zoom in"
+        >
+          +
+        </button>
+      </div>
+      <div className="wall-editor-canvas" ref={containerRef} onWheel={handleWheel}>
         <Stage
           width={canvasWidth}
           height={canvasHeight}

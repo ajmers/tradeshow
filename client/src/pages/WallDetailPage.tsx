@@ -11,6 +11,7 @@ import {
   useUpdateWallAssignment,
   useDeleteWallAssignment,
 } from '@/hooks/useWallAssignmentMutations'
+import { useUpdateWall } from '@/hooks/useWallMutations'
 import { WallAssignmentCanvas } from '@/features/walls/WallAssignmentCanvas'
 import { WallInventory } from '@/features/walls/WallInventory'
 import { ItemDetailDialog } from '@/features/walls/ItemDetailDialog'
@@ -27,6 +28,7 @@ export function WallDetailPage() {
   const createAssignment = useCreateWallAssignment()
   const updateAssignment = useUpdateWallAssignment()
   const deleteAssignment = useDeleteWallAssignment()
+  const updateWall = useUpdateWall()
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null)
   const [detailAssignmentId, setDetailAssignmentId] = useState<string | null>(null)
   const [showGrid, setShowGrid] = useState(true)
@@ -181,13 +183,34 @@ export function WallDetailPage() {
       />
 
       <div className="wall-editor-toolbar">
-        <h1>{wallName}</h1>
-        <button type="button" onClick={() => setShowGrid((prev) => !prev)}>
-          {showGrid ? 'Hide gridlines' : 'Show gridlines'}
-        </button>
+        <div>
+          <h1>{wallName}</h1>
+          {(wall.fields.Height || wall.fields.Width) && (
+            <p className="wall-editor-dimensions">
+              {wall.fields.Height ?? '?'} × {wall.fields.Width ?? '?'}{' '}
+              {wall.fields['Unit of Measure'] ?? 'ft'}
+            </p>
+          )}
+        </div>
+        <div className="wall-editor-toolbar__controls">
+          <label className="wall-editor-color-picker">
+            Wall color
+            <input
+              type="color"
+              value={wall.fields['Wall Color']?.trim() || '#e4e4e7'}
+              onChange={(event) =>
+                updateWall.mutate({ id: wall.id, input: { 'Wall Color': event.target.value } })
+              }
+            />
+          </label>
+          <button type="button" onClick={() => setShowGrid((prev) => !prev)}>
+            {showGrid ? 'Hide gridlines' : 'Show gridlines'}
+          </button>
+        </div>
       </div>
 
       <WallAssignmentCanvas
+        key={wall.id}
         wall={wall}
         placedItems={placedItems}
         selectedAssignmentId={selectedAssignmentId}

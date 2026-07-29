@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { createWall } from '@/api/walls'
-import type { CreateWallInput } from '@shared'
+import { createWall, updateWall } from '@/api/walls'
+import type { CreateWallInput, UpdateWallInput } from '@shared'
 
 export function useCreateWall() {
   const queryClient = useQueryClient()
@@ -12,5 +12,13 @@ export function useCreateWall() {
       queryClient.invalidateQueries({ queryKey: ['walls'] })
       queryClient.invalidateQueries({ queryKey: ['booths'] })
     },
+  })
+}
+
+export function useUpdateWall() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UpdateWallInput }) => updateWall(id, input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['walls'] }),
   })
 }

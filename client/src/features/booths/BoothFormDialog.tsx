@@ -34,7 +34,6 @@ export function BoothFormDialog({ onClose }: BoothFormDialogProps) {
 
     const input: CreateBoothInput = {
       'Booth Name': getString('Booth Name') ?? '',
-      'Booth Type': getString('Booth Type') as CreateBoothInput['Booth Type'],
       'Event Start Date': getString('Event Start Date'),
       'Event End Date': getString('Event End Date'),
       'Event Location': getString('Event Location'),
@@ -59,19 +58,6 @@ export function BoothFormDialog({ onClose }: BoothFormDialogProps) {
           Booth Name
           <input name="Booth Name" required />
         </label>
-        <label>
-          Booth Type
-          <select name="Booth Type" defaultValue="">
-            <option value="">—</option>
-            <option value="Solo">Solo</option>
-            <option value="Group">Group</option>
-            <option value="Gallery">Gallery</option>
-            <option value="Fair">Fair</option>
-            <option value="Pop-Up">Pop-Up</option>
-            <option value="Other">Other</option>
-          </select>
-        </label>
-
         <div className="item-dialog__row item-dialog__row--2col">
           <label>
             Event Start Date

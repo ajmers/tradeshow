@@ -66,7 +66,7 @@ export function WallFormDialog({ boothId, onClose }: WallFormDialogProps) {
           <input name="Wall Name" required />
         </label>
 
-        <div className="item-dialog__row">
+        <div className="item-dialog__row item-dialog__row--3col">
           <label>
             Height
             <input name="Height" type="number" step="any" />
@@ -84,11 +84,12 @@ export function WallFormDialog({ boothId, onClose }: WallFormDialogProps) {
               <option value="cm">cm</option>
             </select>
           </label>
-          <label>
-            Wall Color
-            <input name="Wall Color" type="text" placeholder="#rrggbb" />
-          </label>
         </div>
+
+        <label>
+          Wall Color
+          <input name="Wall Color" type="color" defaultValue="#e4e4e7" />
+        </label>
 
         <label>
           Location

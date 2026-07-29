@@ -22,6 +22,9 @@ export const createWallInputSchema = wallFieldsSchema.extend({
   Booths: z.array(z.string()).min(1, 'A wall must belong to a booth'),
 })
 
+export const updateWallInputSchema = wallFieldsSchema.partial()
+
 export type WallFields = z.infer<typeof wallFieldsSchema>
 export type Wall = z.infer<typeof wallSchema>
 export type CreateWallInput = z.infer<typeof createWallInputSchema>
+export type UpdateWallInput = z.infer<typeof updateWallInputSchema>
