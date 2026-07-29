@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Breadcrumb } from '@/components/Breadcrumb'
 import { useBooths } from '@/hooks/useBooths'
@@ -9,6 +9,7 @@ import { useSales } from '@/hooks/useSales'
 import {
   useCreateWallAssignment,
   useUpdateWallAssignment,
+  useDeleteWallAssignment,
 } from '@/hooks/useWallAssignmentMutations'
 import { WallAssignmentCanvas } from '@/features/walls/WallAssignmentCanvas'
 import { WallInventory } from '@/features/walls/WallInventory'
@@ -25,9 +26,29 @@ export function WallDetailPage() {
   const sales = useSales()
   const createAssignment = useCreateWallAssignment()
   const updateAssignment = useUpdateWallAssignment()
+  const deleteAssignment = useDeleteWallAssignment()
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null)
   const [detailAssignmentId, setDetailAssignmentId] = useState<string | null>(null)
   const [showGrid, setShowGrid] = useState(true)
+
+  // Delete/Backspace removes the selected item directly from the canvas. Only active
+  // while the detail dialog is closed, so it never fights with typing in the Sell form.
+  useEffect(() => {
+    if (!selectedAssignmentId || detailAssignmentId) {
+      return
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Delete' && event.key !== 'Backspace') {
+        return
+      }
+      event.preventDefault()
+      deleteAssignment.mutate(selectedAssignmentId, {
+        onSuccess: () => setSelectedAssignmentId(null),
+      })
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedAssignmentId, detailAssignmentId, deleteAssignment])
 
   const isPending =
     booths.isPending || walls.isPending || items.isPending || wallAssignments.isPending || sales.isPending
@@ -127,11 +148,21 @@ export function WallDetailPage() {
     })
   }
 
-  const handleSelectItem = (assignmentId: string | null) => {
-    setSelectedAssignmentId(assignmentId)
-    if (assignmentId) {
+  // On the canvas, a first click just selects the item (so the rotate handles show up
+  // and are actually usable); clicking the already-selected item again opens details.
+  const handleCanvasSelect = (assignmentId: string | null) => {
+    if (assignmentId && assignmentId === selectedAssignmentId) {
       setDetailAssignmentId(assignmentId)
+    } else {
+      setSelectedAssignmentId(assignmentId)
     }
+  }
+
+  // The inventory list has no handles to preserve access to, so a click there can
+  // just select and open details in one step.
+  const handleListSelect = (assignmentId: string) => {
+    setSelectedAssignmentId(assignmentId)
+    setDetailAssignmentId(assignmentId)
   }
 
   const handleCloseDetail = () => {
@@ -160,7 +191,7 @@ export function WallDetailPage() {
         wall={wall}
         placedItems={placedItems}
         selectedAssignmentId={selectedAssignmentId}
-        onSelect={handleSelectItem}
+        onSelect={handleCanvasSelect}
         onMove={handleMove}
         onTransformEnd={handleTransformEnd}
         showGrid={showGrid}
@@ -169,7 +200,7 @@ export function WallDetailPage() {
       <WallInventory
         placedItems={placedItems}
         selectedAssignmentId={selectedAssignmentId}
-        onSelect={handleSelectItem}
+        onSelect={handleListSelect}
       />
 
       <section>

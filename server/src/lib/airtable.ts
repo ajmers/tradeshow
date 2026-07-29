@@ -96,6 +96,33 @@ export async function deleteRecord(baseId: string, table: string, id: string): P
   })
 }
 
+export interface AirtableBaseSummary {
+  id: string
+  name: string
+  permissionLevel: string
+}
+
+// Unlike the rest of this client, base listing isn't scoped to a single base
+// (it's how you discover which bases a token can see in the first place).
+export async function listBases(): Promise<AirtableBaseSummary[]> {
+  const bases: AirtableBaseSummary[] = []
+  let offset: string | undefined
+
+  do {
+    const params = new URLSearchParams()
+    if (offset) {
+      params.set('offset', offset)
+    }
+    const page = await request<{ bases: AirtableBaseSummary[]; offset?: string }>(
+      `${AIRTABLE_API_URL}/meta/bases?${params.toString()}`,
+    )
+    bases.push(...page.bases)
+    offset = page.offset
+  } while (offset)
+
+  return bases
+}
+
 export interface AirtableAttachmentUpload {
   contentType: string
   file: string

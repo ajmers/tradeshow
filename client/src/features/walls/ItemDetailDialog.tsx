@@ -38,9 +38,6 @@ export function ItemDetailDialog({ placedItem, boothId, onClose }: ItemDetailDia
   const title = fields.Title ?? 'Untitled'
 
   const handleRemove = () => {
-    if (!window.confirm(`Remove "${title}" from the wall?`)) {
-      return
-    }
     deleteAssignment.mutate(assignment.id, {
       onSuccess: () => dialogRef.current?.close(),
     })
