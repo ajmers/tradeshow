@@ -3,7 +3,7 @@ import type { Booth } from '@shared'
 import { useSales } from '@/hooks/useSales'
 import { useItems } from '@/hooks/useItems'
 import { useConsigners } from '@/hooks/useConsigners'
-import { computeBoothReport } from '@/features/booths/boothReport'
+import { computeBoothReport, buildBoothReportCsv, type BoothReport } from '@/features/booths/boothReport'
 
 interface BoothReportDialogProps {
   booth: Booth
@@ -32,6 +32,25 @@ function formatDate(value: string | undefined): string {
 
 function formatRate(value: number | undefined): string {
   return value === undefined ? '—' : `${Math.round(value * 100)}%`
+}
+
+function sanitizeFilename(name: string): string {
+  return name.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'booth'
+}
+
+function downloadCsv(filename: string, report: BoothReport) {
+  // BOM prefix so Excel correctly detects UTF-8 rather than mangling non-ASCII titles/names.
+  const blob = new Blob(['﻿' + buildBoothReportCsv(report)], {
+    type: 'text/csv;charset=utf-8;',
+  })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
 }
 
 export function BoothReportDialog({ booth, onClose }: BoothReportDialogProps) {
@@ -71,7 +90,19 @@ export function BoothReportDialog({ booth, onClose }: BoothReportDialogProps) {
         ×
       </button>
       <div className="booth-report">
-        <h2>Booth Report: {boothName}</h2>
+        <div className="booth-report__header">
+          <h2>Booth Report: {boothName}</h2>
+          {report && report.rows.length > 0 && (
+            <button
+              type="button"
+              onClick={() =>
+                downloadCsv(`booth-report-${sanitizeFilename(boothName)}.csv`, report)
+              }
+            >
+              Download CSV
+            </button>
+          )}
+        </div>
 
         {isPending && <p>Loading…</p>}
         {firstError && <p role="alert">Error: {firstError.message}</p>}

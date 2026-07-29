@@ -77,3 +77,24 @@ export function computeBoothReport(
 
   return { rows, totalSales, totalNet }
 }
+
+function toCsvField(value: string): string {
+  return /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
+}
+
+export function buildBoothReportCsv(report: BoothReport): string {
+  const header = ['Item', 'Date Sold', 'Sale Price', 'Consigner', 'Rate', 'Net']
+  const rows = report.rows.map((row) => [
+    row.itemTitle,
+    row.dateSold ?? '',
+    row.salePrice !== undefined ? row.salePrice.toFixed(2) : '',
+    row.consignerName ?? '',
+    row.consignerRate !== undefined ? `${Math.round(row.consignerRate * 100)}%` : '',
+    row.net !== undefined ? row.net.toFixed(2) : '',
+  ])
+  const totalsRow = ['Totals', '', report.totalSales.toFixed(2), '', '', report.totalNet.toFixed(2)]
+
+  return [header, ...rows, totalsRow]
+    .map((line) => line.map(toCsvField).join(','))
+    .join('\r\n')
+}

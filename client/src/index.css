@@ -476,18 +476,28 @@ main section + section {
   font-size: 0.8125rem;
 }
 
-.booth-report-dialog {
-  width: min(48rem, calc(100vw - 2rem));
+dialog.booth-report-dialog {
+  width: min(76rem, calc(100vw - 2rem));
+  min-height: min(28rem, 85vh);
 }
 
 .booth-report {
-  padding: 1.5rem;
+  padding: 2rem 2.25rem;
   max-height: 85vh;
   overflow-y: auto;
 }
 
-.booth-report h2 {
-  margin: 0 0 1rem;
+.booth-report__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.booth-report__header h2 {
+  margin: 0;
+  font-size: 1.5rem;
 }
 
 .booth-report__table-wrapper {
@@ -497,14 +507,18 @@ main section + section {
 .booth-report__table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.875rem;
+  font-size: 1rem;
 }
 
 .booth-report__table th,
 .booth-report__table td {
   text-align: left;
-  padding: 0.5rem 0.75rem;
+  padding: 0.875rem 1.125rem;
   border-bottom: 1px solid light-dark(#d4d4d8, #3f3f46);
+}
+
+.booth-report__table th:not(:first-child),
+.booth-report__table td:not(:first-child) {
   white-space: nowrap;
 }
 
