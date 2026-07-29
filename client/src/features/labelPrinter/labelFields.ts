@@ -33,11 +33,14 @@ export interface LabelField {
   key: string
   label: string
   getValue: (item: Item) => string | undefined
+  // Airtable's Label field is a "rich text" long text field: its value is a
+  // Markdown-ish string (bold/italic/links/lists) rather than plain text.
+  richText?: boolean
 }
 
 export const LABEL_FIELDS: LabelField[] = [
   { key: 'Title', label: 'Title', getValue: (item) => item.fields.Title },
-  { key: 'Label', label: 'Label', getValue: (item) => item.fields.Label },
+  { key: 'Label', label: 'Label', getValue: (item) => item.fields.Label, richText: true },
   { key: 'Artist', label: 'Artist', getValue: (item) => item.fields.Artist },
   { key: 'Dimensions', label: 'Dimensions', getValue: formatDimensions },
   { key: 'Condition', label: 'Condition', getValue: (item) => item.fields.Condition },

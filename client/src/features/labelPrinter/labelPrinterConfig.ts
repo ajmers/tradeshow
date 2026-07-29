@@ -4,7 +4,6 @@ const STORAGE_KEY = 'tradeshow:labelPrinterConfig'
 
 export interface LabelPrinterConfig {
   fieldKeys: string[]
-  labelsPerPage: number
   showLogo: boolean
 }
 
@@ -23,7 +22,6 @@ export const PAGE_LAYOUTS: Record<number, { columns: number; rows: number }> = {
 
 const DEFAULT_CONFIG: LabelPrinterConfig = {
   fieldKeys: DEFAULT_FIELD_KEYS,
-  labelsPerPage: 8,
   showLogo: true,
 }
 

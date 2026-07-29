@@ -470,9 +470,14 @@ main section + section {
   color: light-dark(#52525b, #a1a1aa);
 }
 
-.booth-card__report-button {
+.booth-card__actions {
+  display: flex;
+  gap: 0.5rem;
   margin-top: 0.75rem;
-  width: 100%;
+}
+
+.booth-card__report-button {
+  flex: 1;
   font-size: 0.8125rem;
 }
 
@@ -1084,6 +1089,39 @@ dialog.item-detail-dialog::backdrop {
   background: light-dark(#fff, #27272a);
 }
 
+.label-printer-config__hint {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: light-dark(#52525b, #a1a1aa);
+}
+
+.label-printer-location-filter {
+  display: flex;
+  gap: 1.5rem;
+  margin: 1rem 0;
+}
+
+.label-printer-location-filter label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.label-printer-location-filter select {
+  font: inherit;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid light-dark(#d4d4d8, #3f3f46);
+  border-radius: 0.375rem;
+  background: light-dark(#fff, #27272a);
+  color: inherit;
+}
+
+.label-sheet__group-title {
+  font-size: 1rem;
+  margin: 0 0 0.75rem;
+}
+
 .label-printer-items {
   border: 1px solid light-dark(#d4d4d8, #3f3f46);
   border-radius: 0.5rem;
@@ -1156,13 +1194,13 @@ dialog.item-detail-dialog::backdrop {
   white-space: nowrap;
 }
 
-/* Matches the @page size (letter) minus its margin (0.5in) on all sides, so the
+/* Matches the @page size (letter) minus its margin (0.65in) on all sides, so the
    preview is the same size as the printed page and labels stretch to fill it. */
 .label-sheet__page {
   display: grid;
   gap: 0.5rem;
-  width: 7.5in;
-  height: 10in;
+  width: 7.2in;
+  height: 9.7in;
   margin: 0 auto 1.5rem;
   padding-bottom: 1.5rem;
   border-bottom: 1px dashed light-dark(#d4d4d8, #3f3f46);
@@ -1179,9 +1217,9 @@ dialog.item-detail-dialog::backdrop {
   height: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  text-align: center;
+  text-align: left;
   gap: 0.25rem;
   border: 1px solid light-dark(#d4d4d8, #3f3f46);
   border-radius: 0.375rem;
@@ -1189,7 +1227,12 @@ dialog.item-detail-dialog::backdrop {
   break-inside: avoid;
 }
 
+.label-sheet__label--with-logo {
+  justify-content: flex-start;
+}
+
 .label-sheet__logo {
+  align-self: center;
   max-width: 60%;
   max-height: 3rem;
   object-fit: contain;
@@ -1198,17 +1241,57 @@ dialog.item-detail-dialog::backdrop {
 
 .label-sheet__field {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: 1.1667rem; /* 18.67px = 14pt in print */
 }
 
 .label-sheet__field--Title {
   font-weight: 600;
-  font-size: 0.9375rem;
+  font-size: 1.3333rem; /* 21.33px = 16pt in print */
+}
+
+.label-sheet__field--richtext {
+  font-size: 1.1667rem; /* 18.67px = 14pt in print */
+  width: 100%;
+}
+
+.label-sheet__field--richtext p {
+  margin: 0 0 0.5em;
+}
+
+.label-sheet__field--richtext p:last-child {
+  margin-bottom: 0;
+}
+
+.label-sheet__field--richtext ul,
+.label-sheet__field--richtext ol {
+  margin: 0 0 0.5em;
+  padding-left: 1.25em;
+}
+
+.label-sheet__field--richtext blockquote {
+  margin: 0 0 0.5em;
+  padding-left: 0.75em;
+  border-left: 2px solid light-dark(#d4d4d8, #3f3f46);
+  color: light-dark(#52525b, #a1a1aa);
+}
+
+.label-sheet__field--richtext h1,
+.label-sheet__field--richtext h2,
+.label-sheet__field--richtext h3,
+.label-sheet__field--richtext h4,
+.label-sheet__field--richtext h5,
+.label-sheet__field--richtext h6 {
+  font-size: 1.3333rem; /* 21.33px = 16pt in print */
+  margin: 0 0 0.25em;
+}
+
+.label-sheet__field--richtext code {
+  font-size: 1.0833rem; /* 17.33px = 13pt in print */
 }
 
 @page {
   size: letter;
-  margin: 0.5in;
+  margin: 0.65in;
 }
 
 @media print {
@@ -1227,5 +1310,9 @@ dialog.item-detail-dialog::backdrop {
   .label-sheet__page {
     border-bottom: none;
     margin-bottom: 0;
+  }
+
+  .label-sheet__group-title {
+    display: none;
   }
 }

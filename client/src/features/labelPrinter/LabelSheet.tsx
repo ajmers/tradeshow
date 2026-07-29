@@ -1,11 +1,18 @@
+import ReactMarkdown from 'react-markdown'
+import remarkBreaks from 'remark-breaks'
+import remarkGfm from 'remark-gfm'
 import type { Item } from '@shared'
 import { LABEL_FIELDS } from '@/features/labelPrinter/labelFields'
 import { PAGE_LAYOUTS } from '@/features/labelPrinter/labelPrinterConfig'
+import {
+  bucketItemsByWordCount,
+  BUCKET_LABELS_PER_PAGE,
+  BUCKET_TITLES,
+} from '@/features/labelPrinter/labelBucketing'
 
 interface LabelSheetProps {
   items: Item[]
   fieldKeys: string[]
-  labelsPerPage: number
   showLogo: boolean
   logoDataUrl: string | null
 }
@@ -18,46 +25,76 @@ function chunk<T>(list: T[], size: number): T[][] {
   return chunks
 }
 
-export function LabelSheet({ items, fieldKeys, labelsPerPage, showLogo, logoDataUrl }: LabelSheetProps) {
-  const layout = PAGE_LAYOUTS[labelsPerPage] ?? { columns: 2, rows: 4 }
+export function LabelSheet({ items, fieldKeys, showLogo, logoDataUrl }: LabelSheetProps) {
   const fields = LABEL_FIELDS.filter((field) => fieldKeys.includes(field.key))
-  const pages = chunk(items, labelsPerPage)
+  const hasLogo = showLogo && Boolean(logoDataUrl)
 
   if (items.length === 0) {
     return <p>Select at least one item to preview labels.</p>
   }
 
+  const groups = bucketItemsByWordCount(items, fields)
+
   return (
     <div className="label-sheet">
-      {pages.map((pageItems, pageIndex) => (
-        <div
-          key={pageIndex}
-          className="label-sheet__page"
-          style={{
-            gridTemplateColumns: `repeat(${layout.columns}, 1fr)`,
-            gridTemplateRows: `repeat(${layout.rows}, 1fr)`,
-          }}
-        >
-          {pageItems.map((item) => (
-            <div key={item.id} className="label-sheet__label">
-              {showLogo && logoDataUrl && (
-                <img className="label-sheet__logo" src={logoDataUrl} alt="" />
-              )}
-              {fields.map((field) => {
-                const value = field.getValue(item)
-                if (!value) {
-                  return null
-                }
-                return (
-                  <p key={field.key} className={`label-sheet__field label-sheet__field--${field.key}`}>
-                    {value}
-                  </p>
-                )
-              })}
-            </div>
-          ))}
-        </div>
-      ))}
+      {groups.map(({ bucket, items: bucketItems }) => {
+        const labelsPerPage = BUCKET_LABELS_PER_PAGE[bucket]
+        const layout = PAGE_LAYOUTS[labelsPerPage] ?? { columns: 2, rows: 4 }
+        const pages = chunk(bucketItems, labelsPerPage)
+
+        return (
+          <div key={bucket} className="label-sheet__group">
+            <h3 className="label-sheet__group-title">{BUCKET_TITLES[bucket]}</h3>
+            {pages.map((pageItems, pageIndex) => (
+              <div
+                key={pageIndex}
+                className="label-sheet__page"
+                style={{
+                  gridTemplateColumns: `repeat(${layout.columns}, 1fr)`,
+                  gridTemplateRows: `repeat(${layout.rows}, 1fr)`,
+                }}
+              >
+                {pageItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className={
+                      hasLogo ? 'label-sheet__label label-sheet__label--with-logo' : 'label-sheet__label'
+                    }
+                  >
+                    {hasLogo && <img className="label-sheet__logo" src={logoDataUrl ?? undefined} alt="" />}
+                    {fields.map((field) => {
+                      const value = field.getValue(item)
+                      if (!value) {
+                        return null
+                      }
+                      if (field.richText) {
+                        return (
+                          <div
+                            key={field.key}
+                            className={`label-sheet__field label-sheet__field--${field.key} label-sheet__field--richtext`}
+                          >
+                            <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                              {value}
+                            </ReactMarkdown>
+                          </div>
+                        )
+                      }
+                      return (
+                        <p
+                          key={field.key}
+                          className={`label-sheet__field label-sheet__field--${field.key}`}
+                        >
+                          {value}
+                        </p>
+                      )
+                    })}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )
+      })}
     </div>
   )
 }

@@ -1,5 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useItems } from '@/hooks/useItems'
+import { useBooths } from '@/hooks/useBooths'
+import { useWalls } from '@/hooks/useWalls'
+import { useWallAssignments } from '@/hooks/useWallAssignments'
 import { useLabelLogo } from '@/hooks/useLabelLogo'
 import { LabelPrinterConfigPanel } from '@/features/labelPrinter/LabelPrinterConfigPanel'
 import { ItemSelectionList } from '@/features/labelPrinter/ItemSelectionList'
@@ -11,24 +15,105 @@ import {
 } from '@/features/labelPrinter/labelPrinterConfig'
 
 export function LabelPrinterPage() {
-  const { data, isPending, isError, error } = useItems()
+  const items = useItems()
+  const booths = useBooths()
+  const walls = useWalls()
+  const wallAssignments = useWallAssignments()
   const logo = useLabelLogo()
+  const [searchParams] = useSearchParams()
   const [config, setConfig] = useState<LabelPrinterConfig>(() => loadLabelPrinterConfig())
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [boothFilter, setBoothFilter] = useState(() => searchParams.get('boothId') ?? '')
+  const [wallFilter, setWallFilter] = useState('')
+  const hasInitializedSelection = useRef(false)
 
   useEffect(() => {
     saveLabelPrinterConfig(config)
   }, [config])
 
+  // Everything starts selected by default (or, if arriving from a booth's "Print
+  // Labels" link, just that booth's items) — the user can then deselect individual
+  // items or clear the whole selection. Only runs once, on first load, so it
+  // doesn't stomp on the user's own (de)selections if items refetch later.
+  useEffect(() => {
+    if (!items.data || !wallAssignments.data || !booths.data || hasInitializedSelection.current) {
+      return
+    }
+    const initialBoothId = searchParams.get('boothId') ?? ''
+    const initialBoothWallIds = new Set(
+      booths.data.find((booth) => booth.id === initialBoothId)?.fields.Walls ?? [],
+    )
+    const initialIds = initialBoothId
+      ? new Set(
+          wallAssignments.data
+            .filter((assignment) => initialBoothWallIds.has(assignment.fields.Wall?.[0] ?? ''))
+            .map((assignment) => assignment.fields.Painting?.[0])
+            .filter((id): id is string => Boolean(id)),
+        )
+      : new Set(items.data.map((item) => item.id))
+    setSelectedIds(initialIds)
+    hasInitializedSelection.current = true
+  }, [items.data, wallAssignments.data, booths.data, searchParams])
+
+  const isPending = items.isPending || booths.isPending || walls.isPending || wallAssignments.isPending
+  const firstError = items.error ?? booths.error ?? walls.error ?? wallAssignments.error
+
   if (isPending) {
     return <p>Loading…</p>
   }
 
-  if (isError) {
-    return <p role="alert">Error loading items: {error.message}</p>
+  if (firstError) {
+    return <p role="alert">Error: {firstError.message}</p>
   }
 
-  const selectedItems = data.filter((item) => selectedIds.has(item.id))
+  const itemsData = items.data ?? []
+  const boothsData = booths.data ?? []
+  const wallsData = walls.data ?? []
+  const wallAssignmentsData = wallAssignments.data ?? []
+
+  const wallsInSelectedBooth = boothFilter
+    ? wallsData.filter((wall) =>
+        (boothsData.find((booth) => booth.id === boothFilter)?.fields.Walls ?? []).includes(wall.id),
+      )
+    : []
+
+  function itemIdsForLocation(boothId: string, wallId: string): Set<string> {
+    if (wallId) {
+      return new Set(
+        wallAssignmentsData
+          .filter((assignment) => assignment.fields.Wall?.[0] === wallId)
+          .map((assignment) => assignment.fields.Painting?.[0])
+          .filter((id): id is string => Boolean(id)),
+      )
+    }
+    if (boothId) {
+      const boothWallIds = new Set(
+        boothsData.find((booth) => booth.id === boothId)?.fields.Walls ?? [],
+      )
+      return new Set(
+        wallAssignmentsData
+          .filter((assignment) => boothWallIds.has(assignment.fields.Wall?.[0] ?? ''))
+          .map((assignment) => assignment.fields.Painting?.[0])
+          .filter((id): id is string => Boolean(id)),
+      )
+    }
+    return new Set(itemsData.map((item) => item.id))
+  }
+
+  function handleBoothFilterChange(boothId: string) {
+    setBoothFilter(boothId)
+    setWallFilter('')
+    setSelectedIds(itemIdsForLocation(boothId, ''))
+  }
+
+  function handleWallFilterChange(wallId: string) {
+    setWallFilter(wallId)
+    setSelectedIds(itemIdsForLocation(boothFilter, wallId))
+  }
+
+  const locationItemIds = itemIdsForLocation(boothFilter, wallFilter)
+  const filteredItems = itemsData.filter((item) => locationItemIds.has(item.id))
+  const selectedItems = filteredItems.filter((item) => selectedIds.has(item.id))
 
   return (
     <main className="label-printer-page">
@@ -41,7 +126,40 @@ export function LabelPrinterPage() {
         </div>
 
         <LabelPrinterConfigPanel config={config} onChange={setConfig} />
-        <ItemSelectionList items={data} selectedIds={selectedIds} onChange={setSelectedIds} />
+
+        <div className="label-printer-location-filter">
+          <label>
+            Booth
+            <select
+              value={boothFilter}
+              onChange={(event) => handleBoothFilterChange(event.target.value)}
+            >
+              <option value="">All booths</option>
+              {boothsData.map((booth) => (
+                <option key={booth.id} value={booth.id}>
+                  {booth.fields['Booth Name'] ?? 'Untitled booth'}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Wall
+            <select
+              value={wallFilter}
+              onChange={(event) => handleWallFilterChange(event.target.value)}
+              disabled={!boothFilter}
+            >
+              <option value="">{boothFilter ? 'All walls in this booth' : 'All walls'}</option>
+              {wallsInSelectedBooth.map((wall) => (
+                <option key={wall.id} value={wall.id}>
+                  {wall.fields['Wall Name'] ?? 'Untitled wall'}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <ItemSelectionList items={filteredItems} selectedIds={selectedIds} onChange={setSelectedIds} />
 
         <h2>Preview</h2>
       </div>
@@ -49,7 +167,6 @@ export function LabelPrinterPage() {
       <LabelSheet
         items={selectedItems}
         fieldKeys={config.fieldKeys}
-        labelsPerPage={config.labelsPerPage}
         showLogo={config.showLogo}
         logoDataUrl={logo.data ?? null}
       />

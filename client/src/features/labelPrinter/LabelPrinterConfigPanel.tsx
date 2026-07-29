@@ -1,6 +1,6 @@
 import type { ChangeEvent } from 'react'
 import { LABEL_FIELDS } from '@/features/labelPrinter/labelFields'
-import { PAGE_LAYOUTS, type LabelPrinterConfig } from '@/features/labelPrinter/labelPrinterConfig'
+import type { LabelPrinterConfig } from '@/features/labelPrinter/labelPrinterConfig'
 import { useLabelLogo, useUpdateLabelLogo } from '@/hooks/useLabelLogo'
 
 const MAX_LOGO_BYTES = 2 * 1024 * 1024
@@ -62,22 +62,10 @@ export function LabelPrinterConfigPanel({ config, onChange }: LabelPrinterConfig
         </div>
       </fieldset>
 
-      <label className="label-printer-config__row">
-        Labels per page
-        <select
-          value={config.labelsPerPage}
-          onChange={(event) => onChange({ ...config, labelsPerPage: Number(event.target.value) })}
-        >
-          {Object.keys(PAGE_LAYOUTS)
-            .map(Number)
-            .sort((a, b) => a - b)
-            .map((count) => (
-              <option key={count} value={count}>
-                {count}
-              </option>
-            ))}
-        </select>
-      </label>
+      <p className="label-printer-config__hint">
+        Labels are sized automatically: items with the most text get the biggest boxes
+        (2 per page), items with the least get the most (8 per page).
+      </p>
 
       <div className="label-printer-config__logo">
         <label className="label-printer-config__checkbox">
