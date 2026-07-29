@@ -30,7 +30,12 @@ export function useCreateWallAssignment() {
         queryClient.setQueryData(['wallAssignments'], context.previous)
       }
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['wallAssignments'] }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['wallAssignments'] })
+      // Creating an assignment changes the booth's reciprocal `Wall Assignments` link
+      // (used for the item count on booth cards), so that cached list goes stale too.
+      queryClient.invalidateQueries({ queryKey: ['booths'] })
+    },
   })
 }
 
@@ -47,6 +52,11 @@ export function useDeleteWallAssignment() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => deleteWallAssignment(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['wallAssignments'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['wallAssignments'] })
+      // Same reciprocal-link reason as create — removing an assignment also changes
+      // the booth's item count.
+      queryClient.invalidateQueries({ queryKey: ['booths'] })
+    },
   })
 }

@@ -35,7 +35,6 @@ export function WallDetailPage() {
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null)
   const [detailAssignmentId, setDetailAssignmentId] = useState<string | null>(null)
   const [showGrid, setShowGrid] = useState(true)
-  const [useSmartPlacement, setUseSmartPlacement] = useState(false)
 
   // Delete/Backspace removes the selected item directly from the canvas. Only active
   // while the detail dialog is closed, so it never fights with typing in the Sell form.
@@ -131,7 +130,7 @@ export function WallDetailPage() {
       : undefined
 
     const spot =
-      useSmartPlacement && wallWidthInches && wallHeightInches
+      wallWidthInches && wallHeightInches
         ? findEmptySpot(
             wallWidthInches,
             wallHeightInches,
@@ -266,21 +265,6 @@ export function WallDetailPage() {
       />
 
       <section>
-        <label className="wall-editor-smart-placement">
-          <input
-            type="checkbox"
-            checked={useSmartPlacement}
-            onChange={(event) => setUseSmartPlacement(event.target.checked)}
-          />
-          Place in empty spot
-          <span
-            className="wall-editor-tooltip"
-            tabIndex={0}
-            title="Scans the wall for free space before placing the item, instead of using the default grid layout."
-          >
-            ?
-          </span>
-        </label>
         <h2>Available items</h2>
         <AvailableItemsTray items={availableItems} onSelect={handleAddItem} />
       </section>

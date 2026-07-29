@@ -627,27 +627,6 @@ dialog.booth-report-dialog {
   font-size: 0.8125rem;
 }
 
-.wall-editor-smart-placement {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  margin-bottom: 0.75rem;
-  font-size: 0.875rem;
-}
-
-.wall-editor-tooltip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.125rem;
-  height: 1.125rem;
-  border-radius: 50%;
-  border: 1px solid light-dark(#a1a1aa, #71717a);
-  color: light-dark(#71717a, #a1a1aa);
-  font-size: 0.6875rem;
-  cursor: help;
-}
-
 .wall-editor-toolbar__controls {
   display: flex;
   align-items: center;
