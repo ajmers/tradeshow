@@ -1,7 +1,8 @@
 import { app } from '@/app'
 
-// Hono's own `.fetch` is already a standalone Web-standard (Request) => Response
-// handler (the same one used for Cloudflare Workers etc.) — export it directly
-// rather than going through the `hono/vercel` `handle()` adapter, which has
-// known issues on Vercel's Node runtime where requests hang with no response.
-export default app.fetch
+// Vercel's Node runtime only recognizes the Web-standard fetch handler shape
+// when the default export is an object with a `fetch` method — a bare function
+// (e.g. `export default app.fetch`) is instead treated as a legacy Node
+// `(req, res)` handler, which hangs (never calling `res.end()`) or throws when
+// Hono tries to parse the relative `req.url` as an absolute URL.
+export default { fetch: app.fetch }
