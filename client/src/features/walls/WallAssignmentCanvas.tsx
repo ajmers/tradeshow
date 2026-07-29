@@ -26,6 +26,10 @@ const MIN_HEIGHT_BUDGET = 400
 const ZOOM_MIN = 0.5
 const ZOOM_MAX = 3
 const ZOOM_STEP = 0.25
+// Converts a wheel event's deltaY into a zoom change. Proportional rather than a fixed
+// step per event, since trackpads fire many small events per scroll gesture while a
+// mouse wheel fires few large ones — a fixed step would make trackpad zoom too jumpy.
+const ZOOM_WHEEL_SENSITIVITY = 0.0015
 
 function clampZoom(value: number): number {
   return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, value))
@@ -80,11 +84,37 @@ export function WallAssignmentCanvas({
   }
 
   function handleWheel(event: ReactWheelEvent<HTMLDivElement>) {
-    if (!event.ctrlKey && !event.metaKey) {
+    event.preventDefault()
+    adjustZoom((current) => current - event.deltaY * ZOOM_WHEEL_SENSITIVITY)
+  }
+
+  // Scrolling now zooms rather than panning, so dragging on empty canvas space is the
+  // replacement way to move around — items keep their own Konva drag behavior since this
+  // only starts a pan when the mousedown target is the stage background itself.
+  function handleStageMouseDown(event: KonvaEventObject<MouseEvent>) {
+    if (event.target !== event.target.getStage()) {
       return
     }
-    event.preventDefault()
-    adjustZoom((current) => current + (event.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP))
+    onSelect(null)
+    const container = containerRef.current
+    if (!container) {
+      return
+    }
+    const startX = event.evt.clientX
+    const startY = event.evt.clientY
+    const startScrollLeft = container.scrollLeft
+    const startScrollTop = container.scrollTop
+
+    const handlePanMove = (moveEvent: MouseEvent) => {
+      container.scrollLeft = startScrollLeft - (moveEvent.clientX - startX)
+      container.scrollTop = startScrollTop - (moveEvent.clientY - startY)
+    }
+    const handlePanEnd = () => {
+      window.removeEventListener('mousemove', handlePanMove)
+      window.removeEventListener('mouseup', handlePanEnd)
+    }
+    window.addEventListener('mousemove', handlePanMove)
+    window.addEventListener('mouseup', handlePanEnd)
   }
 
   const fields = wall.fields
@@ -193,15 +223,7 @@ export function WallAssignmentCanvas({
         </button>
       </div>
       <div className="wall-editor-canvas" ref={containerRef} onWheel={handleWheel}>
-        <Stage
-          width={canvasWidth}
-          height={canvasHeight}
-          onMouseDown={(event) => {
-            if (event.target === event.target.getStage()) {
-              onSelect(null)
-            }
-          }}
-        >
+        <Stage width={canvasWidth} height={canvasHeight} onMouseDown={handleStageMouseDown}>
           <Layer>
             <Rect x={0} y={0} width={canvasWidth} height={canvasHeight} fill="#d4d4d8" />
             <Group x={marginX} y={marginY}>

@@ -89,8 +89,17 @@ h6 {
   font-weight: 600;
 }
 
-.app-nav__status {
+.app-nav__bottom {
   margin-top: auto;
+}
+
+.app-nav__admin {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+}
+
+.app-nav__status {
   padding-top: 1rem;
   font-size: 0.8125rem;
 }
@@ -525,6 +534,7 @@ main section + section {
   border-radius: 0.5rem;
   overflow: auto;
   line-height: 0;
+  cursor: grab;
 }
 
 .wall-inventory {

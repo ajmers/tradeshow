@@ -5,7 +5,7 @@ import { HealthStatus } from '@/features/health/HealthStatus'
 import { SignOutButton } from '@/features/auth/SignOutButton'
 
 const navItems = [
-  { to: '/', label: 'Gallery', end: true },
+  { to: '/', label: 'Inventory', end: true },
   { to: '/booth-planner', label: 'Booth Planner', end: false },
 ]
 
@@ -28,19 +28,23 @@ export function AppLayout() {
               </NavLink>
             </li>
           ))}
-          {baseInfo?.isAdmin && (
-            <li>
-              <NavLink to="/admin">Admin</NavLink>
-            </li>
-          )}
         </ul>
-        <div className="app-nav__status">
-          <HealthStatus />
-        </div>
-        <div className="app-nav__footer">
-          {baseInfo?.name && <p className="app-nav__base">{baseInfo.name}</p>}
-          {session?.user.email && <p className="app-nav__email">{session.user.email}</p>}
-          <SignOutButton />
+        <div className="app-nav__bottom">
+          {baseInfo?.isAdmin && (
+            <ul className="app-nav__admin">
+              <li>
+                <NavLink to="/admin">Admin</NavLink>
+              </li>
+            </ul>
+          )}
+          <div className="app-nav__status">
+            <HealthStatus />
+          </div>
+          <div className="app-nav__footer">
+            {baseInfo?.name && <p className="app-nav__base">{baseInfo.name}</p>}
+            {session?.user.email && <p className="app-nav__email">{session.user.email}</p>}
+            <SignOutButton />
+          </div>
         </div>
       </nav>
       <div className="app-content">
