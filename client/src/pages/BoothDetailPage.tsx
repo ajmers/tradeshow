@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Breadcrumb } from '@/components/Breadcrumb'
 import { useBooths } from '@/hooks/useBooths'
@@ -6,6 +7,7 @@ import { useItems } from '@/hooks/useItems'
 import { useWallAssignments } from '@/hooks/useWallAssignments'
 import { useSales } from '@/hooks/useSales'
 import { WallsGrid, type WallWithPlacements } from '@/features/walls/WallsGrid'
+import { WallFormDialog } from '@/features/walls/WallFormDialog'
 import type { PlacedItem } from '@/features/walls/PlacedItem'
 
 export function BoothDetailPage() {
@@ -15,6 +17,7 @@ export function BoothDetailPage() {
   const items = useItems()
   const wallAssignments = useWallAssignments()
   const sales = useSales()
+  const [showAddWall, setShowAddWall] = useState(false)
 
   const isPending =
     booths.isPending || walls.isPending || items.isPending || wallAssignments.isPending || sales.isPending
@@ -72,9 +75,18 @@ export function BoothDetailPage() {
       <h1>{boothName}</h1>
 
       <section>
-        <h2>Walls</h2>
+        <div className="page-toolbar">
+          <h2>Walls</h2>
+          <button type="button" onClick={() => setShowAddWall(true)}>
+            Add Wall
+          </button>
+        </div>
         <WallsGrid walls={wallsWithPlacements} boothId={booth.id} />
       </section>
+
+      {showAddWall && (
+        <WallFormDialog boothId={booth.id} onClose={() => setShowAddWall(false)} />
+      )}
     </main>
   )
 }
