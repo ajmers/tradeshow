@@ -17,6 +17,9 @@ export const itemFieldsSchema = z.object({
   Condition: z.enum(['Excellent', 'Good', 'Fair', 'Needs Restoration']).optional(),
   Tags: z.array(z.string()).optional(),
   Consigner: z.string().optional(),
+  'List Price': z.number().optional(),
+  Discount: z.number().optional(),
+  Label: z.string().optional(),
 })
 
 export const itemSchema = z.object({

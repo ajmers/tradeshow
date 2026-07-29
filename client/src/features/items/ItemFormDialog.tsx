@@ -64,6 +64,8 @@ export function ItemFormDialog({ item, onClose }: ItemFormDialogProps) {
       Condition: getString('Condition') as CreateItemInput['Condition'],
       Location: getString('Location'),
       Consigner: getString('Consigner'),
+      'List Price': getNumber('List Price'),
+      Discount: getNumber('Discount'),
     }
 
     const imageFiles = formData
@@ -173,6 +175,17 @@ export function ItemFormDialog({ item, onClose }: ItemFormDialogProps) {
           Consigner
           <input name="Consigner" defaultValue={fields?.Consigner} />
         </label>
+
+        <div className="item-dialog__row item-dialog__row--2col">
+          <label>
+            List Price
+            <input name="List Price" type="number" step="any" min="0" defaultValue={fields?.['List Price']} />
+          </label>
+          <label>
+            Discount
+            <input name="Discount" type="number" step="any" min="0" defaultValue={fields?.Discount} />
+          </label>
+        </div>
 
         <label>
           Photos
