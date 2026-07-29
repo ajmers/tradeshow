@@ -222,7 +222,12 @@ export function WallAssignmentCanvas({
           +
         </button>
       </div>
-      <div className="wall-editor-canvas" ref={containerRef} onWheel={handleWheel}>
+      <div
+        className="wall-editor-canvas"
+        ref={containerRef}
+        onWheel={handleWheel}
+        style={{ width: availableSize.width, height: availableSize.height }}
+      >
         <Stage width={canvasWidth} height={canvasHeight} onMouseDown={handleStageMouseDown}>
           <Layer>
             <Rect x={0} y={0} width={canvasWidth} height={canvasHeight} fill="#d4d4d8" />
