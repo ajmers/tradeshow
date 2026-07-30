@@ -21,6 +21,7 @@ export const itemFieldsSchema = z.object({
   Discount: z.number().optional(),
   Label: z.string().optional(),
   'Label Title': z.string().optional(),
+  'Is Prop': z.boolean().optional(),
 })
 
 export const itemSchema = z.object({

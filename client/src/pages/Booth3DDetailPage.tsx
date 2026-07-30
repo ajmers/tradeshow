@@ -32,19 +32,56 @@ import { ItemDetailDialog } from '@/features/walls/ItemDetailDialog'
 import { findEmptySpot } from '@/features/walls/findEmptySpot'
 import { itemFloorFootprintInches, itemFootprintInches, wallDimensionToInches } from '@/features/walls/wallScale'
 import type { PlacedItem } from '@/features/walls/PlacedItem'
+import type { Wall } from '@shared'
 
 type DetailTarget = { kind: 'wall'; assignmentId: string } | { kind: 'floor'; placementId: string }
 
 const SURFACE_NAMES: BoothSurfaceName[] = ['Front', 'Back', 'Left', 'Right']
 
+interface SuggestedDimensions {
+  width?: number
+  depth?: number
+  height?: number
+}
+
+// A rough starting guess so the form isn't blank when a booth already has walls from
+// the 2D Booth Planner: the two longest distinct wall widths become the footprint
+// (the booth is assumed rectangular), and the tallest wall becomes the height, since
+// a booth's walls are typically all the same height anyway.
+function suggestBoothDimensions(walls: Wall[]): SuggestedDimensions {
+  const widthsFt: number[] = []
+  const heightsFt: number[] = []
+  for (const wall of walls) {
+    if (wall.fields.Width) {
+      widthsFt.push(wallDimensionToInches(wall.fields.Width, wall.fields['Unit of Measure']) / 12)
+    }
+    if (wall.fields.Height) {
+      heightsFt.push(wallDimensionToInches(wall.fields.Height, wall.fields['Unit of Measure']) / 12)
+    }
+  }
+  if (widthsFt.length === 0) {
+    return {}
+  }
+  widthsFt.sort((a, b) => b - a)
+  const round = (value: number) => Math.round(value * 10) / 10
+  return {
+    width: round(widthsFt[0]!),
+    depth: round(widthsFt[1] ?? widthsFt[0]!),
+    height: heightsFt.length > 0 ? round(Math.max(...heightsFt)) : undefined,
+  }
+}
+
 function BoothDimensionsForm({
   boothId,
+  suggested,
   onSaved,
 }: {
   boothId: string
+  suggested: SuggestedDimensions
   onSaved: (dims: { width: number; depth: number; height: number }) => void
 }) {
   const updateBooth = useUpdateBooth()
+  const hasSuggestion = suggested.width !== undefined
 
   return (
     <form
@@ -69,18 +106,44 @@ function BoothDimensionsForm({
     >
       <h2>Set booth dimensions</h2>
       <p>Enter the booth&apos;s footprint and wall height in feet, then lay out your walls in 3D.</p>
+      {hasSuggestion && (
+        <p className="booth-3d-panel__hint">
+          Suggested from this booth&apos;s existing walls — adjust if needed.
+        </p>
+      )}
       <div className="booth-3d-dimensions-form__row">
         <label>
           Width (ft)
-          <input name="width" type="number" step="any" min="0" required />
+          <input
+            name="width"
+            type="number"
+            step="any"
+            min="0"
+            defaultValue={suggested.width ?? ''}
+            required
+          />
         </label>
         <label>
           Depth (ft)
-          <input name="depth" type="number" step="any" min="0" required />
+          <input
+            name="depth"
+            type="number"
+            step="any"
+            min="0"
+            defaultValue={suggested.depth ?? ''}
+            required
+          />
         </label>
         <label>
           Height (ft)
-          <input name="height" type="number" step="any" min="0" required />
+          <input
+            name="height"
+            type="number"
+            step="any"
+            min="0"
+            defaultValue={suggested.height ?? ''}
+            required
+          />
         </label>
       </div>
       <button type="submit" disabled={updateBooth.isPending}>
@@ -157,6 +220,15 @@ export function Booth3DDetailPage() {
   const boothWallIds = new Set(booth.fields.Walls ?? [])
   const boothWalls = wallsData.filter((wall) => boothWallIds.has(wall.id))
   const soldItemIds = new Set(salesData.flatMap((sale) => sale.fields['Items (Sale History Link)'] ?? []))
+
+  // The booth's own saved dimensions win when re-editing; a fresh guess from its
+  // existing walls only fills in whichever of those was never set.
+  const wallSuggestedDimensions = suggestBoothDimensions(boothWalls)
+  const suggestedDimensions: SuggestedDimensions = {
+    width: widthFt ?? wallSuggestedDimensions.width,
+    depth: depthFt ?? wallSuggestedDimensions.depth,
+    height: heightFt ?? wallSuggestedDimensions.height,
+  }
 
   function placedItemsForWall(wallId: string): PlacedItem[] {
     return wallAssignmentsData
@@ -326,7 +398,11 @@ export function Booth3DDetailPage() {
       </div>
 
       {!hasDimensions || editingDimensions ? (
-        <BoothDimensionsForm boothId={booth.id} onSaved={() => setEditingDimensions(false)} />
+        <BoothDimensionsForm
+          boothId={booth.id}
+          suggested={suggestedDimensions}
+          onSaved={() => setEditingDimensions(false)}
+        />
       ) : (
         <>
           <div className="booth-3d-toolbar">
