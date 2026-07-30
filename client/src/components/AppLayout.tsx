@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { NavLink, Outlet, matchPath, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useBaseInfo } from '@/hooks/useBaseInfo'
+import { useLabelLogo } from '@/hooks/useLabelLogo'
 import { HealthStatus } from '@/features/health/HealthStatus'
 import { SignOutButton } from '@/features/auth/SignOutButton'
 
@@ -37,6 +38,7 @@ function useLastBoothId(): string | undefined {
 export function AppLayout() {
   const { session } = useAuth()
   const { data: baseInfo } = useBaseInfo()
+  const { data: labelLogo } = useLabelLogo()
   const lastBoothId = useLastBoothId()
 
   const navItems = [
@@ -73,9 +75,17 @@ export function AppLayout() {
               </li>
             </ul>
           )}
-          <div className="app-nav__status">
-            <HealthStatus />
-          </div>
+          {baseInfo?.isAdmin ? (
+            <div className="app-nav__status">
+              <HealthStatus />
+            </div>
+          ) : (
+            labelLogo && (
+              <div className="app-nav__status">
+                <img src={labelLogo} alt="" className="app-nav__status-logo" />
+              </div>
+            )
+          )}
           <div className="app-nav__footer">
             {baseInfo?.name && <p className="app-nav__base">{baseInfo.name}</p>}
             {session?.user.email && <p className="app-nav__email">{session.user.email}</p>}

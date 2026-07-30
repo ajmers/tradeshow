@@ -108,6 +108,12 @@ h6 {
   padding: 0.5rem 0.75rem;
 }
 
+.app-nav__status-logo {
+  max-width: 100%;
+  max-height: 4rem;
+  object-fit: contain;
+}
+
 .app-nav__footer {
   margin-top: 0.75rem;
   padding-top: 0.75rem;
