@@ -427,12 +427,18 @@ section {
   display: inline-block;
 }
 
+/* inline-flex (not inline-block) for two reasons: flex layout ignores the
+   whitespace/newlines between the word spans below instead of rendering
+   them as visible gaps, and flexbox's baseline alignment uses each item's
+   actual text baseline -- unlike plain inline-block, which (per CSS2.1)
+   computes its baseline as its bottom margin edge whenever overflow isn't
+   visible, which is what made the rotating word render like superscript. */
 .word-rotate__list {
-  display: inline-block;
+  display: inline-flex;
+  align-items: baseline;
 }
 
 .word-rotate__word {
-  display: inline-block;
   overflow: hidden;
   white-space: nowrap;
   max-width: 0;
