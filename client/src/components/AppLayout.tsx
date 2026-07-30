@@ -12,23 +12,57 @@ function boothIdFromPathname(pathname: string): string | undefined {
   return boothDetail?.params.boothId ?? wallDetail?.params.boothId
 }
 
+const LAST_BOOTH_STORAGE_PREFIX = 'tradeshow:lastBoothId:'
+
+// Keyed per user (not a single shared key) so that on a browser shared by multiple
+// accounts, signing in as someone else never surfaces the previous user's booth —
+// each account only ever reads and writes its own entry.
+function readStoredBoothId(userId: string | undefined): string | undefined {
+  if (!userId) {
+    return undefined
+  }
+  try {
+    return localStorage.getItem(LAST_BOOTH_STORAGE_PREFIX + userId) ?? undefined
+  } catch {
+    return undefined
+  }
+}
+
+function writeStoredBoothId(userId: string | undefined, boothId: string): void {
+  if (!userId) {
+    return
+  }
+  try {
+    localStorage.setItem(LAST_BOOTH_STORAGE_PREFIX + userId, boothId)
+  } catch {
+    // Storage full/unavailable (e.g. private browsing) — the nav link just won't
+    // persist across reloads.
+  }
+}
+
 // Tracks the most recently viewed booth so the Booth Planner nav link can jump
 // straight back into it — coming back after visiting an unrelated page lands on the
-// same booth instead of resetting to the booth list. AppLayout stays mounted across
-// route changes, so plain component state here persists for the rest of the session.
+// same booth instead of resetting to the booth list. Persisted to localStorage
+// (per user) so it also survives a full page reload, not just in-app navigation.
+// Note this is just a shortcut, not a trust boundary: BoothDetailPage/WallDetailPage
+// independently verify the booth actually belongs to the signed-in user and redirect
+// home if not, so a stale or foreign id here can't land anyone on someone else's page.
 // Updated during render (React's documented "adjusting state during render" pattern)
 // rather than in an effect, since it only needs to react to the pathname the
 // component already saw.
-function useLastBoothId(): string | undefined {
+function useLastBoothId(userId: string | undefined): string | undefined {
   const location = useLocation()
   const [seenPathname, setSeenPathname] = useState(location.pathname)
-  const [lastBoothId, setLastBoothId] = useState(() => boothIdFromPathname(location.pathname))
+  const [lastBoothId, setLastBoothId] = useState(
+    () => boothIdFromPathname(location.pathname) ?? readStoredBoothId(userId),
+  )
 
   if (location.pathname !== seenPathname) {
     setSeenPathname(location.pathname)
     const boothId = boothIdFromPathname(location.pathname)
     if (boothId) {
       setLastBoothId(boothId)
+      writeStoredBoothId(userId, boothId)
     }
   }
 
@@ -39,7 +73,7 @@ export function AppLayout() {
   const { session } = useAuth()
   const { data: baseInfo } = useBaseInfo()
   const { data: labelLogo } = useLabelLogo()
-  const lastBoothId = useLastBoothId()
+  const lastBoothId = useLastBoothId(session?.user.id)
 
   // Defaults to enabled while base info is still loading, so the link doesn't flash
   // away and back once it resolves (it's normally already cached before this renders).

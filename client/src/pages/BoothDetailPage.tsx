@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { Breadcrumb } from '@/components/Breadcrumb'
 import { useBooths } from '@/hooks/useBooths'
 import { useWalls } from '@/hooks/useWalls'
@@ -118,12 +118,10 @@ export function BoothDetailPage() {
   const booth = boothsData.find((entry) => entry.id === boothId)
 
   if (!booth) {
-    return (
-      <main>
-        <Breadcrumb items={[{ label: 'Booth Planner', to: '/booth-planner' }, { label: 'Not found' }]} />
-        <p>Booth not found.</p>
-      </main>
-    )
+    // Most often a stale booth URL left over from a different user's session on
+    // this browser (or a deleted booth) — either way, there's nothing useful to
+    // show here, so bounce straight back to the home page instead of a dead end.
+    return <Navigate to="/" replace />
   }
 
   const boothName = booth.fields['Booth Name'] ?? 'Untitled booth'

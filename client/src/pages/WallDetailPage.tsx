@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { Breadcrumb } from '@/components/Breadcrumb'
 import { useBooths } from '@/hooks/useBooths'
 import { useWalls } from '@/hooks/useWalls'
@@ -79,12 +79,10 @@ export function WallDetailPage() {
   const wall = wallsData.find((entry) => entry.id === wallId)
 
   if (!booth || !wall) {
-    return (
-      <main>
-        <Breadcrumb items={[{ label: 'Booth Planner', to: '/booth-planner' }, { label: 'Not found' }]} />
-        <p>{!booth ? 'Booth not found.' : 'Wall not found.'}</p>
-      </main>
-    )
+    // Most often a stale wall/booth URL left over from a different user's session
+    // on this browser (or a deleted booth/wall) — either way, there's nothing
+    // useful to show here, so bounce straight back to the home page.
+    return <Navigate to="/" replace />
   }
 
   const boothName = booth.fields['Booth Name'] ?? 'Untitled booth'
