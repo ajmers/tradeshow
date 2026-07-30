@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Breadcrumb } from '@/components/Breadcrumb'
 import { useBooths } from '@/hooks/useBooths'
@@ -8,8 +8,58 @@ import { useWallAssignments } from '@/hooks/useWallAssignments'
 import { useSales } from '@/hooks/useSales'
 import { WallsGrid, type WallWithPlacements } from '@/features/walls/WallsGrid'
 import { WallFormDialog } from '@/features/walls/WallFormDialog'
+import { Booth3DView } from '@/features/walls/Booth3DView'
 import { BoothReportDialog } from '@/features/booths/BoothReportDialog'
 import type { PlacedItem } from '@/features/walls/PlacedItem'
+
+type ViewMode = '2d' | '3d'
+
+function BoothActionsMenu({ onRunReport }: { onRunReport: () => void }) {
+  const [open, setOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [open])
+
+  return (
+    <div className="booth-actions-menu" ref={menuRef}>
+      <button
+        type="button"
+        className="booth-actions-menu__trigger"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Booth actions"
+        onClick={() => setOpen((prev) => !prev)}
+      >
+        ⋯
+      </button>
+      {open && (
+        <div className="booth-actions-menu__dropdown" role="menu">
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false)
+              onRunReport()
+            }}
+          >
+            Run Booth Report
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export function BoothDetailPage() {
   const { boothId } = useParams<{ boothId: string }>()
@@ -20,6 +70,7 @@ export function BoothDetailPage() {
   const sales = useSales()
   const [showAddWall, setShowAddWall] = useState(false)
   const [showReport, setShowReport] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>('2d')
 
   const isPending =
     booths.isPending || walls.isPending || items.isPending || wallAssignments.isPending || sales.isPending
@@ -74,22 +125,44 @@ export function BoothDetailPage() {
   return (
     <main>
       <Breadcrumb items={[{ label: 'Booth Planner', to: '/booth-planner' }, { label: boothName }]} />
-      <div className="page-toolbar">
-        <h1>{boothName}</h1>
-        <button type="button" onClick={() => setShowReport(true)}>
-          Run Booth Report
-        </button>
-      </div>
-
-      <section>
-        <div className="page-toolbar">
-          <h2>Walls</h2>
-          <button type="button" onClick={() => setShowAddWall(true)}>
-            Add Wall
+      <div className="page-toolbar page-toolbar--booth">
+        <div className="page-toolbar__title">
+          <h1>{boothName}</h1>
+          <BoothActionsMenu onRunReport={() => setShowReport(true)} />
+        </div>
+        <div className="view-toggle" role="group" aria-label="View mode">
+          <button
+            type="button"
+            className={`view-toggle__button${viewMode === '2d' ? ' view-toggle__button--active' : ''}`}
+            aria-pressed={viewMode === '2d'}
+            onClick={() => setViewMode('2d')}
+          >
+            2D
+          </button>
+          <button
+            type="button"
+            className={`view-toggle__button${viewMode === '3d' ? ' view-toggle__button--active' : ''}`}
+            aria-pressed={viewMode === '3d'}
+            onClick={() => setViewMode('3d')}
+          >
+            3D
           </button>
         </div>
-        <WallsGrid walls={wallsWithPlacements} boothId={booth.id} />
-      </section>
+      </div>
+
+      {viewMode === '2d' ? (
+        <section>
+          <div className="page-toolbar">
+            <h2>Walls</h2>
+            <button type="button" onClick={() => setShowAddWall(true)}>
+              Add Wall
+            </button>
+          </div>
+          <WallsGrid walls={wallsWithPlacements} boothId={booth.id} />
+        </section>
+      ) : (
+        <Booth3DView booth={booth} />
+      )}
 
       {showAddWall && (
         <WallFormDialog boothId={booth.id} onClose={() => setShowAddWall(false)} />

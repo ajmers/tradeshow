@@ -1,9 +1,6 @@
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
-import { Breadcrumb } from '@/components/Breadcrumb'
-import { useBooths } from '@/hooks/useBooths'
 import { useWalls } from '@/hooks/useWalls'
 import { useItems } from '@/hooks/useItems'
 import { useWallAssignments } from '@/hooks/useWallAssignments'
@@ -33,7 +30,7 @@ import { FloorAssignmentCanvas } from '@/features/walls/FloorAssignmentCanvas'
 import { findEmptySpot } from '@/features/walls/findEmptySpot'
 import { itemFloorFootprintInches, itemFootprintInches, wallDimensionToInches } from '@/features/walls/wallScale'
 import type { PlacedItem } from '@/features/walls/PlacedItem'
-import type { Wall } from '@shared'
+import type { Booth, Wall } from '@shared'
 
 type DetailTarget = { kind: 'wall'; assignmentId: string } | { kind: 'floor'; placementId: string }
 
@@ -154,9 +151,7 @@ function BoothDimensionsForm({
   )
 }
 
-export function Booth3DDetailPage() {
-  const { boothId } = useParams<{ boothId: string }>()
-  const booths = useBooths()
+export function Booth3DView({ booth }: { booth: Booth }) {
   const walls = useWalls()
   const items = useItems()
   const wallAssignments = useWallAssignments()
@@ -179,14 +174,9 @@ export function Booth3DDetailPage() {
   const [selected2DFloorPlacementId, setSelected2DFloorPlacementId] = useState<string | null>(null)
 
   const isPending =
-    booths.isPending ||
-    walls.isPending ||
-    items.isPending ||
-    wallAssignments.isPending ||
-    sales.isPending ||
-    floorPlacements.isPending
+    walls.isPending || items.isPending || wallAssignments.isPending || sales.isPending || floorPlacements.isPending
   const firstError =
-    booths.error ?? walls.error ?? items.error ?? wallAssignments.error ?? sales.error ?? floorPlacements.error
+    walls.error ?? items.error ?? wallAssignments.error ?? sales.error ?? floorPlacements.error
 
   if (isPending) {
     return <p>Loading…</p>
@@ -196,26 +186,13 @@ export function Booth3DDetailPage() {
     return <p role="alert">Error: {firstError.message}</p>
   }
 
-  const boothsData = booths.data ?? []
   const wallsData = walls.data ?? []
   const itemsData = items.data ?? []
   const wallAssignmentsData = wallAssignments.data ?? []
   const salesData = sales.data ?? []
   const floorPlacementsData = floorPlacements.data ?? []
 
-  const booth = boothsData.find((entry) => entry.id === boothId)
-
-  if (!booth) {
-    return (
-      <main>
-        <Breadcrumb items={[{ label: 'Booth Planner 3D', to: '/booth-planner-3d' }, { label: 'Not found' }]} />
-        <p>Booth not found.</p>
-      </main>
-    )
-  }
-
   const boothRecordId = booth.id
-  const boothName = booth.fields['Booth Name'] ?? 'Untitled booth'
   const widthFt = booth.fields['Booth Width']
   const depthFt = booth.fields['Booth Depth']
   const heightFt = booth.fields['Booth Height']
@@ -456,12 +433,7 @@ export function Booth3DDetailPage() {
       : undefined
 
   return (
-    <main>
-      <Breadcrumb items={[{ label: 'Booth Planner 3D', to: '/booth-planner-3d' }, { label: boothName }]} />
-      <div className="page-toolbar">
-        <h1>{boothName} — 3D Layout</h1>
-      </div>
-
+    <>
       {!hasDimensions || editingDimensions ? (
         <BoothDimensionsForm
           boothId={booth.id}
@@ -545,7 +517,7 @@ export function Booth3DDetailPage() {
                     <>
                       <h3>{selectedSurface} wall</h3>
                       {boothWalls.length === 0 ? (
-                        <p>This booth has no walls yet. Add one from the Booth Planner first.</p>
+                        <p>This booth has no walls yet. Add one from the Walls tab first.</p>
                       ) : (
                         <label>
                           Assigned wall
@@ -631,6 +603,6 @@ export function Booth3DDetailPage() {
           }}
         />
       )}
-    </main>
+    </>
   )
 }
