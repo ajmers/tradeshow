@@ -428,11 +428,11 @@ section {
 }
 
 .word-rotate__list {
-  display: inline-block;
+  display: inline-flex;
+  align-items: baseline;
 }
 
 .word-rotate__word {
-  display: inline-block;
   overflow: hidden;
   white-space: nowrap;
   max-width: 0;
@@ -457,29 +457,35 @@ section {
   animation-delay: 9s;
 }
 
-/* Uses only opacity/max-width (both continuously interpolated, universally
-   supported) rather than animating `display`, which browsers only added
-   discrete-animation support for recently and unevenly. max-width jumps to a
-   generous 20em almost instantly (0% -> 0.5%) while still fully transparent,
-   so the fade-in reads as a pure crossfade rather than a width "unfurl"; it
-   only collapses back to 0 (22%) after opacity has already reached 0, for the
-   same reason on the way out. */
+/* Uses only opacity/max-width/transform (all continuously interpolated,
+   universally supported) rather than animating `display`, which browsers
+   only added discrete-animation support for recently and unevenly.
+   max-width jumps to a generous 20em almost instantly (0% -> 0.5%) while
+   still fully transparent, so the fade-in reads as a pure crossfade rather
+   than a width "unfurl"; it only collapses back to 0 (22%) after opacity
+   has already reached 0, for the same reason on the way out. The
+   translateY on top of that fade is what makes each word rise into place
+   and continue rising out, rather than just popping/fading in place. */
 @keyframes word-rotate-fade {
   0% {
     opacity: 0;
     max-width: 0;
+    transform: translateY(0.3em);
   }
   0.5% {
     max-width: 20em;
   }
   4% {
     opacity: 1;
+    transform: translateY(0);
   }
   18% {
     opacity: 1;
+    transform: translateY(0);
   }
   21.5% {
     opacity: 0;
+    transform: translateY(-0.3em);
   }
   22% {
     max-width: 0;
@@ -487,6 +493,7 @@ section {
   100% {
     opacity: 0;
     max-width: 0;
+    transform: translateY(0.3em);
   }
 }
 
