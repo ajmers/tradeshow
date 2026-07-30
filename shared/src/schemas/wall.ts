@@ -9,6 +9,9 @@ export const wallFieldsSchema = z.object({
   Description: z.string().optional(),
   Location: z.string().optional(),
   Booths: z.array(z.string()).optional(),
+  // Nullable (not just optional) so a wall can be explicitly cleared off a booth's
+  // 3D surface — Airtable requires an explicit `null` PATCH to unset a select field.
+  'Booth Surface': z.enum(['Front', 'Back', 'Left', 'Right']).nullable().optional(),
 })
 
 export const wallSchema = z.object({

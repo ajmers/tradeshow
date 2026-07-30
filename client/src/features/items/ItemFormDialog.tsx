@@ -55,6 +55,7 @@ export function ItemFormDialog({ item, onClose }: ItemFormDialogProps) {
 
     const input: CreateItemInput = {
       Title: getString('Title') ?? '',
+      'Label Title': getString('Label Title'),
       Artist: getString('Artist'),
       Description: getString('Description'),
       Height: getNumber('Height'),
@@ -124,6 +125,10 @@ export function ItemFormDialog({ item, onClose }: ItemFormDialogProps) {
         <label>
           Title
           <input name="Title" defaultValue={fields?.Title} required />
+        </label>
+        <label>
+          Label Title
+          <input name="Label Title" defaultValue={fields?.['Label Title']} />
         </label>
         <label>
           Artist

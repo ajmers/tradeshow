@@ -3,7 +3,7 @@ import { useBooths } from '@/hooks/useBooths'
 import { BoothCard } from '@/features/booths/BoothCard'
 import { BoothFormDialog } from '@/features/booths/BoothFormDialog'
 
-export function BoothsGrid() {
+export function BoothsGrid({ basePath }: { basePath?: string } = {}) {
   const { data, isPending, isError, error } = useBooths()
   const [showAddBooth, setShowAddBooth] = useState(false)
 
@@ -22,7 +22,7 @@ export function BoothsGrid() {
       {!isPending && !isError && data.length > 0 && (
         <div className="booths-grid">
           {data.map((booth) => (
-            <BoothCard key={booth.id} booth={booth} />
+            <BoothCard key={booth.id} booth={booth} basePath={basePath} />
           ))}
         </div>
       )}

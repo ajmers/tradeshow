@@ -11,9 +11,9 @@ import {
   useUpdateWallAssignment,
   useDeleteWallAssignment,
 } from '@/hooks/useWallAssignmentMutations'
-import { useUpdateWall } from '@/hooks/useWallMutations'
 import { WallAssignmentCanvas } from '@/features/walls/WallAssignmentCanvas'
 import { WallDimensionsEditor } from '@/features/walls/WallDimensionsEditor'
+import { WallColorPicker } from '@/features/walls/WallColorPicker'
 import { WallInventory } from '@/features/walls/WallInventory'
 import { ItemDetailDialog } from '@/features/walls/ItemDetailDialog'
 import type { PlacedItem } from '@/features/walls/PlacedItem'
@@ -31,7 +31,6 @@ export function WallDetailPage() {
   const createAssignment = useCreateWallAssignment()
   const updateAssignment = useUpdateWallAssignment()
   const deleteAssignment = useDeleteWallAssignment()
-  const updateWall = useUpdateWall()
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null)
   const [detailAssignmentId, setDetailAssignmentId] = useState<string | null>(null)
   const [showGrid, setShowGrid] = useState(true)
@@ -89,6 +88,7 @@ export function WallDetailPage() {
   const wallName = wall.fields['Wall Name'] ?? 'Untitled wall'
 
   const boothWallIds = new Set(booth.fields.Walls ?? [])
+  const boothWalls = wallsData.filter((entry) => boothWallIds.has(entry.id))
   const boothAssignments = wallAssignmentsData.filter((assignment) =>
     boothWallIds.has(assignment.fields.Wall?.[0] ?? ''),
   )
@@ -231,16 +231,7 @@ export function WallDetailPage() {
           <WallDimensionsEditor wall={wall} key={wall.id} />
         </div>
         <div className="wall-editor-toolbar__controls">
-          <label className="wall-editor-color-picker">
-            Wall color
-            <input
-              type="color"
-              value={wall.fields['Wall Color']?.trim() || '#e4e4e7'}
-              onChange={(event) =>
-                updateWall.mutate({ id: wall.id, input: { 'Wall Color': event.target.value } })
-              }
-            />
-          </label>
+          <WallColorPicker wall={wall} boothWalls={boothWalls} />
           <button type="button" onClick={() => setShowGrid((prev) => !prev)}>
             {showGrid ? 'Hide gridlines' : 'Show gridlines'}
           </button>

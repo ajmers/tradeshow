@@ -1,18 +1,59 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { useState } from 'react'
+import { NavLink, Outlet, matchPath, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useBaseInfo } from '@/hooks/useBaseInfo'
 import { HealthStatus } from '@/features/health/HealthStatus'
 import { SignOutButton } from '@/features/auth/SignOutButton'
 
-const navItems = [
-  { to: '/', label: 'Inventory', end: true },
-  { to: '/booth-planner', label: 'Booth Planner', end: false },
-  { to: '/label-printer', label: 'Label Printer', end: false },
-]
+function boothIdFromPathname(pathname: string): string | undefined {
+  const boothDetail = matchPath('/booth-planner/:boothId', pathname)
+  const wallDetail = matchPath('/booth-planner/:boothId/walls/:wallId', pathname)
+  const booth3D = matchPath('/booth-planner-3d/:boothId', pathname)
+  return boothDetail?.params.boothId ?? wallDetail?.params.boothId ?? booth3D?.params.boothId
+}
+
+// Tracks the most recently viewed booth so the Booth Planner and Booth Planner 3D
+// nav links can jump straight back into it — crossing between the two flows (or
+// coming back after visiting an unrelated page) lands on the same booth instead of
+// resetting to the booth list. AppLayout stays mounted across route changes, so
+// plain component state here persists for the rest of the session. Updated during
+// render (React's documented "adjusting state during render" pattern) rather than in
+// an effect, since it only needs to react to the pathname the component already saw.
+function useLastBoothId(): string | undefined {
+  const location = useLocation()
+  const [seenPathname, setSeenPathname] = useState(location.pathname)
+  const [lastBoothId, setLastBoothId] = useState(() => boothIdFromPathname(location.pathname))
+
+  if (location.pathname !== seenPathname) {
+    setSeenPathname(location.pathname)
+    const boothId = boothIdFromPathname(location.pathname)
+    if (boothId) {
+      setLastBoothId(boothId)
+    }
+  }
+
+  return lastBoothId
+}
 
 export function AppLayout() {
   const { session } = useAuth()
   const { data: baseInfo } = useBaseInfo()
+  const lastBoothId = useLastBoothId()
+
+  const navItems = [
+    { to: '/', label: 'Inventory', end: true },
+    {
+      to: lastBoothId ? `/booth-planner/${lastBoothId}` : '/booth-planner',
+      label: 'Booth Planner',
+      end: false,
+    },
+    {
+      to: lastBoothId ? `/booth-planner-3d/${lastBoothId}` : '/booth-planner-3d',
+      label: 'Booth Planner 3D',
+      end: false,
+    },
+    { to: '/label-printer', label: 'Label Printer', end: false },
+  ]
 
   return (
     <div className="app-layout">

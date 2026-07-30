@@ -1,0 +1,181 @@
+import { useRef, useState } from 'react'
+import * as THREE from 'three'
+import type { ThreeEvent } from '@react-three/fiber'
+import type { Item, WallAssignment } from '@shared'
+import { itemFootprintInches, toInches } from '@/features/walls/wallScale'
+import { useItemTexture3D } from '@/features/walls/useItemTexture3D'
+
+const INCHES_PER_FOOT = 12
+// Sits just in front of the wall plane so item textures don't z-fight with it.
+const Z_OFFSET_FT = 0.05
+// Sides/top/bottom/back of a 3D item — there's no photo for those faces, just a
+// plain neutral tone standing in for a canvas edge or frame depth.
+const BOX_SIDE_COLOR = '#a1a1aa'
+
+interface PlacedItem3DProps {
+  assignment: WallAssignment
+  item: Item
+  wallWidthFt: number
+  wallHeightFt: number
+  /** Only the selected wall's items are draggable, so items on other surfaces don't
+   *  intercept clicks meant for orbiting the camera. */
+  interactive?: boolean
+  onMove?: (assignmentId: string, xInches: number, yInches: number) => void
+  onDragActiveChange?: (active: boolean) => void
+}
+
+interface DragState {
+  plane: THREE.Plane
+  parent: THREE.Object3D
+}
+
+export function PlacedItem3D({
+  assignment,
+  item,
+  wallWidthFt,
+  wallHeightFt,
+  interactive,
+  onMove,
+  onDragActiveChange,
+}: PlacedItem3DProps) {
+  const { texture, materialRef: boxFrontMaterialRef } = useItemTexture3D(item)
+
+  const { width: widthInches, height: heightInches } = itemFootprintInches(item.fields)
+  const widthFt = widthInches / INCHES_PER_FOOT
+  const heightFt = heightInches / INCHES_PER_FOOT
+  const depthInches = item.fields.Depth
+    ? toInches(item.fields.Depth, item.fields['Unit of Measure'])
+    : 0
+  const depthFt = depthInches / INCHES_PER_FOOT
+
+  // While dragging, position comes from local pointer tracking instead of the
+  // (stale, until the mutation round-trips) assignment fields, so the item follows
+  // the cursor smoothly. Cleared once the drag ends and the mutation is fired.
+  const [dragPosition, setDragPosition] = useState<{ xInches: number; yInches: number } | null>(
+    null,
+  )
+  const dragStateRef = useRef<DragState | null>(null)
+
+  const xInches = dragPosition?.xInches ?? assignment.fields['X Position'] ?? 0
+  const yInches = dragPosition?.yInches ?? assignment.fields['Y Position'] ?? 0
+  const rotationDegrees = assignment.fields['Rotation Angle'] ?? 0
+
+  // Same top-left + center-of-item convention as the 2D canvas (PlacedItemNode),
+  // just re-centered on the wall's own center and flipped from screen-down-Y to
+  // world-up-Y. Rotation direction flips along with it: a clockwise 2D rotation
+  // (Y down) reads as counter-clockwise once Y points up, so it's negated here to
+  // keep the same visual result as the 2D editor.
+  const centerXInches = xInches + widthInches / 2
+  const centerYInches = yInches + heightInches / 2
+  const x = centerXInches / INCHES_PER_FOOT - wallWidthFt / 2
+  const y = wallHeightFt / 2 - centerYInches / INCHES_PER_FOOT
+  const rotationZ = -(rotationDegrees * Math.PI) / 180
+
+  function handlePointerDown(event: ThreeEvent<PointerEvent>) {
+    if (!interactive) {
+      return
+    }
+    event.stopPropagation()
+    const mesh = event.eventObject
+    const parent = mesh.parent
+    if (!parent) {
+      return
+    }
+    const worldPosition = new THREE.Vector3()
+    mesh.getWorldPosition(worldPosition)
+    const worldQuaternion = new THREE.Quaternion()
+    mesh.getWorldQuaternion(worldQuaternion)
+    const worldNormal = new THREE.Vector3(0, 0, 1).applyQuaternion(worldQuaternion)
+    dragStateRef.current = {
+      plane: new THREE.Plane().setFromNormalAndCoplanarPoint(worldNormal, worldPosition),
+      parent,
+    }
+    ;(event.target as Element).setPointerCapture(event.pointerId)
+    onDragActiveChange?.(true)
+  }
+
+  function handlePointerMove(event: ThreeEvent<PointerEvent>) {
+    const dragState = dragStateRef.current
+    if (!dragState) {
+      return
+    }
+    event.stopPropagation()
+    const worldPoint = new THREE.Vector3()
+    if (!event.ray.intersectPlane(dragState.plane, worldPoint)) {
+      return
+    }
+    const local = dragState.parent.worldToLocal(worldPoint)
+    const newCenterXInches = (local.x + wallWidthFt / 2) * INCHES_PER_FOOT
+    const newCenterYInches = (wallHeightFt / 2 - local.y) * INCHES_PER_FOOT
+    setDragPosition({
+      xInches: newCenterXInches - widthInches / 2,
+      yInches: newCenterYInches - heightInches / 2,
+    })
+  }
+
+  function handlePointerUp(event: ThreeEvent<PointerEvent>) {
+    if (!dragStateRef.current) {
+      return
+    }
+    event.stopPropagation()
+    ;(event.target as Element).releasePointerCapture(event.pointerId)
+    dragStateRef.current = null
+    onDragActiveChange?.(false)
+    if (dragPosition) {
+      onMove?.(assignment.id, dragPosition.xInches, dragPosition.yInches)
+    }
+    setDragPosition(null)
+  }
+
+  const dragHandlers = interactive
+    ? {
+        onPointerDown: handlePointerDown,
+        onPointerMove: handlePointerMove,
+        onPointerUp: handlePointerUp,
+      }
+    : {}
+
+  if (depthFt > 0) {
+    // A real 3D box: its back face rests flush against the wall (plus the same
+    // small offset used for flat items) and it extrudes outward by its own depth,
+    // rather than being centered on the wall surface. Box face order is
+    // [+x, -x, +y, -y, +z, -z]; +z is the face pointing away from the wall, into
+    // the room, so that's the only one that gets the item's photo.
+    return (
+      <mesh position={[x, y, Z_OFFSET_FT + depthFt / 2]} rotation={[0, 0, rotationZ]} {...dragHandlers}>
+        <boxGeometry args={[widthFt, heightFt, depthFt]} />
+        <meshStandardMaterial attach="material-0" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
+        <meshStandardMaterial attach="material-1" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
+        <meshStandardMaterial attach="material-2" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
+        <meshStandardMaterial attach="material-3" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
+        {/* Unlit, like the flat-plane case below — meshStandardMaterial would need
+            scene lighting to render the photo at full brightness, making it look dim
+            or washed-out depending on the light angle. Kept as a single material
+            (only `map`/`color` change) rather than swapping between mesh*Material
+            types when the texture loads, since switching element types here would
+            briefly leave this slot of the material array empty, crashing the
+            raycaster if a pointer event lands in that instant. */}
+        <meshBasicMaterial
+          ref={boxFrontMaterialRef}
+          attach="material-4"
+          map={texture ?? undefined}
+          color={texture ? '#ffffff' : '#fafafa'}
+          toneMapped={false}
+          side={THREE.DoubleSide}
+        />
+        <meshStandardMaterial attach="material-5" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
+      </mesh>
+    )
+  }
+
+  return (
+    <mesh position={[x, y, Z_OFFSET_FT]} rotation={[0, 0, rotationZ]} {...dragHandlers}>
+      <planeGeometry args={[widthFt, heightFt]} />
+      {texture ? (
+        <meshBasicMaterial map={texture} toneMapped={false} side={THREE.DoubleSide} />
+      ) : (
+        <meshStandardMaterial color="#fafafa" side={THREE.DoubleSide} />
+      )}
+    </mesh>
+  )
+}

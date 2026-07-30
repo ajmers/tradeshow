@@ -34,3 +34,21 @@ export function itemFootprintInches(fields: {
     height: fields.Height ? toInches(fields.Height, fields['Unit of Measure']) : DEFAULT_ITEM_INCHES,
   }
 }
+
+/**
+ * An item's freestanding footprint in inches, for floor placement. Unlike wall
+ * items (where a missing Depth legitimately means "flat"), a floor item always
+ * occupies real floor space, so Depth falls back to the same default as Width/Height
+ * rather than to zero.
+ */
+export function itemFloorFootprintInches(fields: {
+  Width?: number
+  Height?: number
+  Depth?: number
+  'Unit of Measure'?: string
+}): { width: number; height: number; depth: number } {
+  return {
+    ...itemFootprintInches(fields),
+    depth: fields.Depth ? toInches(fields.Depth, fields['Unit of Measure']) : DEFAULT_ITEM_INCHES,
+  }
+}

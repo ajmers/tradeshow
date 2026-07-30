@@ -69,7 +69,7 @@ export function WallCanvas({ wall, boothId, placedItems }: WallCanvasProps) {
       <div className="wall-card__caption">
         <strong>{name}</strong>
         <span>
-          {fields.Height} × {fields.Width} {fields['Unit of Measure'] ?? 'ft'}
+          h: {fields.Height} × w: {fields.Width} {fields['Unit of Measure'] ?? 'ft'}
         </span>
       </div>
     </Link>

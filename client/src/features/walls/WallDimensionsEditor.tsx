@@ -10,7 +10,7 @@ export function WallDimensionsEditor({ wall }: { wall: Wall }) {
     return (
       <div className="wall-editor-dimensions">
         <span>
-          {wall.fields.Height ?? '?'} × {wall.fields.Width ?? '?'}{' '}
+          h: {wall.fields.Height ?? '?'} × w: {wall.fields.Width ?? '?'}{' '}
           {wall.fields['Unit of Measure'] ?? 'ft'}
         </span>
         <button
@@ -28,6 +28,7 @@ export function WallDimensionsEditor({ wall }: { wall: Wall }) {
 
   return (
     <div className="wall-editor-dimensions wall-editor-dimensions--editing">
+      <span>h:</span>
       <input
         type="number"
         step="any"
@@ -49,6 +50,7 @@ export function WallDimensionsEditor({ wall }: { wall: Wall }) {
         }}
       />
       <span>×</span>
+      <span>w:</span>
       <input
         type="number"
         step="any"
