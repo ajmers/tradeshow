@@ -190,6 +190,13 @@ a {
   margin: 0 auto;
 }
 
+.hero-wordmark {
+  display: block;
+  width: min(460px, 85%);
+  height: auto;
+  margin: 0 auto 2rem;
+}
+
 .eyebrow {
   display: inline-block;
   font-size: 0.8rem;
