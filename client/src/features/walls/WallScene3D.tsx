@@ -14,6 +14,7 @@ interface WallScene3DProps {
   interactive?: boolean
   onMoveItem?: (assignmentId: string, xInches: number, yInches: number) => void
   onDragActiveChange?: (active: boolean) => void
+  onOpenDetailItem?: (assignmentId: string) => void
 }
 
 export function WallScene3D({
@@ -24,6 +25,7 @@ export function WallScene3D({
   interactive,
   onMoveItem,
   onDragActiveChange,
+  onOpenDetailItem,
 }: WallScene3DProps) {
   const widthInches = wall.fields.Width
     ? wallDimensionToInches(wall.fields.Width, wall.fields['Unit of Measure'])
@@ -74,6 +76,7 @@ export function WallScene3D({
           interactive={interactive}
           onMove={onMoveItem}
           onDragActiveChange={onDragActiveChange}
+          onOpenDetail={onOpenDetailItem ? () => onOpenDetailItem(assignment.id) : undefined}
         />
       ))}
     </>

@@ -22,6 +22,8 @@ interface PlacedItem3DProps {
   interactive?: boolean
   onMove?: (assignmentId: string, xInches: number, yInches: number) => void
   onDragActiveChange?: (active: boolean) => void
+  /** A pointer down+up with no meaningful movement in between is a click, not a drag. */
+  onOpenDetail?: () => void
 }
 
 interface DragState {
@@ -37,6 +39,7 @@ export function PlacedItem3D({
   interactive,
   onMove,
   onDragActiveChange,
+  onOpenDetail,
 }: PlacedItem3DProps) {
   const { texture, materialRef: boxFrontMaterialRef } = useItemTexture3D(item)
 
@@ -55,6 +58,7 @@ export function PlacedItem3D({
     null,
   )
   const dragStateRef = useRef<DragState | null>(null)
+  const didDragRef = useRef(false)
 
   const xInches = dragPosition?.xInches ?? assignment.fields['X Position'] ?? 0
   const yInches = dragPosition?.yInches ?? assignment.fields['Y Position'] ?? 0
@@ -90,6 +94,7 @@ export function PlacedItem3D({
       plane: new THREE.Plane().setFromNormalAndCoplanarPoint(worldNormal, worldPosition),
       parent,
     }
+    didDragRef.current = false
     ;(event.target as Element).setPointerCapture(event.pointerId)
     onDragActiveChange?.(true)
   }
@@ -107,6 +112,7 @@ export function PlacedItem3D({
     const local = dragState.parent.worldToLocal(worldPoint)
     const newCenterXInches = (local.x + wallWidthFt / 2) * INCHES_PER_FOOT
     const newCenterYInches = (wallHeightFt / 2 - local.y) * INCHES_PER_FOOT
+    didDragRef.current = true
     setDragPosition({
       xInches: newCenterXInches - widthInches / 2,
       yInches: newCenterYInches - heightInches / 2,
@@ -121,8 +127,10 @@ export function PlacedItem3D({
     ;(event.target as Element).releasePointerCapture(event.pointerId)
     dragStateRef.current = null
     onDragActiveChange?.(false)
-    if (dragPosition) {
+    if (didDragRef.current && dragPosition) {
       onMove?.(assignment.id, dragPosition.xInches, dragPosition.yInches)
+    } else if (!didDragRef.current) {
+      onOpenDetail?.()
     }
     setDragPosition(null)
   }

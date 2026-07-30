@@ -15,10 +15,10 @@ interface FloorPlacedItem3DProps {
   item: Item
   boothWidthFt: number
   boothDepthFt: number
-  isSelected?: boolean
-  onSelect?: () => void
   onMove?: (placementId: string, xInches: number, yInches: number) => void
   onDragActiveChange?: (active: boolean) => void
+  /** A pointer down+up with no meaningful movement in between is a click, not a drag. */
+  onOpenDetail?: () => void
 }
 
 export function FloorPlacedItem3D({
@@ -26,10 +26,9 @@ export function FloorPlacedItem3D({
   item,
   boothWidthFt,
   boothDepthFt,
-  isSelected,
-  onSelect,
   onMove,
   onDragActiveChange,
+  onOpenDetail,
 }: FloorPlacedItem3DProps) {
   const { texture, materialRef } = useItemTexture3D(item)
 
@@ -49,6 +48,7 @@ export function FloorPlacedItem3D({
     null,
   )
   const isDraggingRef = useRef(false)
+  const didDragRef = useRef(false)
 
   const xInches = dragPosition?.xInches ?? placement.fields['X Position'] ?? 0
   const yInches = dragPosition?.yInches ?? placement.fields['Y Position'] ?? 0
@@ -71,6 +71,7 @@ export function FloorPlacedItem3D({
   function handlePointerDown(event: ThreeEvent<PointerEvent>) {
     event.stopPropagation()
     isDraggingRef.current = true
+    didDragRef.current = false
     ;(event.target as Element).setPointerCapture(event.pointerId)
     onDragActiveChange?.(true)
   }
@@ -86,6 +87,7 @@ export function FloorPlacedItem3D({
     }
     const newCenterXInches = (worldPoint.x + boothWidthFt / 2) * INCHES_PER_FOOT
     const newCenterZInches = (worldPoint.z + boothDepthFt / 2) * INCHES_PER_FOOT
+    didDragRef.current = true
     setDragPosition({
       xInches: newCenterXInches - widthInches / 2,
       yInches: newCenterZInches - depthInches / 2,
@@ -100,47 +102,27 @@ export function FloorPlacedItem3D({
     ;(event.target as Element).releasePointerCapture(event.pointerId)
     isDraggingRef.current = false
     onDragActiveChange?.(false)
-    if (dragPosition) {
+    if (didDragRef.current && dragPosition) {
       onMove?.(placement.id, dragPosition.xInches, dragPosition.yInches)
+    } else if (!didDragRef.current) {
+      onOpenDetail?.()
     }
     setDragPosition(null)
-  }
-
-  function handleClick(event: ThreeEvent<MouseEvent>) {
-    event.stopPropagation()
-    onSelect?.()
   }
 
   return (
     <mesh
       position={[x, heightFt / 2, z]}
       rotation={[0, rotationY, 0]}
-      onClick={handleClick}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
     >
       <boxGeometry args={[widthFt, heightFt, depthFt]} />
-      <meshStandardMaterial
-        attach="material-0"
-        color={isSelected ? '#a5b4fc' : BOX_SIDE_COLOR}
-        side={THREE.DoubleSide}
-      />
-      <meshStandardMaterial
-        attach="material-1"
-        color={isSelected ? '#a5b4fc' : BOX_SIDE_COLOR}
-        side={THREE.DoubleSide}
-      />
-      <meshStandardMaterial
-        attach="material-2"
-        color={isSelected ? '#a5b4fc' : BOX_SIDE_COLOR}
-        side={THREE.DoubleSide}
-      />
-      <meshStandardMaterial
-        attach="material-3"
-        color={isSelected ? '#a5b4fc' : BOX_SIDE_COLOR}
-        side={THREE.DoubleSide}
-      />
+      <meshStandardMaterial attach="material-0" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
+      <meshStandardMaterial attach="material-1" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
+      <meshStandardMaterial attach="material-2" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
+      <meshStandardMaterial attach="material-3" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
       {/* Unlit so the photo shows at full brightness regardless of scene lighting —
           see useItemTexture3D for why this material stays a single persistent
           instance rather than swapping types when the texture loads. */}
@@ -152,11 +134,7 @@ export function FloorPlacedItem3D({
         toneMapped={false}
         side={THREE.DoubleSide}
       />
-      <meshStandardMaterial
-        attach="material-5"
-        color={isSelected ? '#a5b4fc' : BOX_SIDE_COLOR}
-        side={THREE.DoubleSide}
-      />
+      <meshStandardMaterial attach="material-5" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
     </mesh>
   )
 }

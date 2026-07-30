@@ -1,24 +1,28 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import type { PlacedItem } from '@/features/walls/PlacedItem'
+import type { Item } from '@shared'
 import { getItemImageUrl } from '@/features/items/getItemImageUrl'
-import { useDeleteWallAssignment } from '@/hooks/useWallAssignmentMutations'
 import { useCreateSale } from '@/hooks/useSaleMutations'
 
 interface ItemDetailDialogProps {
-  placedItem: PlacedItem
+  item: Item
   boothId: string
+  /** Label for the removal action, e.g. "Remove from wall" or "Remove from floor". */
+  removeLabel: string
+  /** Deletes whatever placed this item (a wall assignment or a floor placement) — the
+   *  dialog awaits it and closes on success, same as it already does for selling. */
+  onRemove: () => Promise<unknown>
   onClose: () => void
 }
 
-export function ItemDetailDialog({ placedItem, boothId, onClose }: ItemDetailDialogProps) {
+export function ItemDetailDialog({ item, boothId, removeLabel, onRemove, onClose }: ItemDetailDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const [mode, setMode] = useState<'details' | 'sell'>('details')
   const [salePrice, setSalePrice] = useState('')
   const [saleNotes, setSaleNotes] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [removing, setRemoving] = useState(false)
 
-  const deleteAssignment = useDeleteWallAssignment()
   const createSale = useCreateSale()
 
   useEffect(() => {
@@ -32,15 +36,18 @@ export function ItemDetailDialog({ placedItem, boothId, onClose }: ItemDetailDia
     return () => dialog.removeEventListener('close', handleClose)
   }, [onClose])
 
-  const { item, assignment } = placedItem
   const fields = item.fields
   const imageUrl = getItemImageUrl(item)
   const title = fields.Title ?? 'Untitled'
 
-  const handleRemove = () => {
-    deleteAssignment.mutate(assignment.id, {
-      onSuccess: () => dialogRef.current?.close(),
-    })
+  const handleRemove = async () => {
+    setRemoving(true)
+    try {
+      await onRemove()
+      dialogRef.current?.close()
+    } finally {
+      setRemoving(false)
+    }
   }
 
   const handleSell = async (event: FormEvent<HTMLFormElement>) => {
@@ -101,8 +108,8 @@ export function ItemDetailDialog({ placedItem, boothId, onClose }: ItemDetailDia
           {fields.Description && <p className="item-detail__description">{fields.Description}</p>}
 
           <div className="item-detail__actions">
-            <button type="button" onClick={handleRemove} disabled={deleteAssignment.isPending}>
-              {deleteAssignment.isPending ? 'Removing…' : 'Remove from wall'}
+            <button type="button" onClick={handleRemove} disabled={removing}>
+              {removing ? 'Removing…' : removeLabel}
             </button>
             <button type="button" onClick={() => setMode('sell')}>
               Sell

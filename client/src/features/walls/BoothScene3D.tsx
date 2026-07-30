@@ -28,10 +28,10 @@ interface BoothScene3DProps {
   onSelectSurface: (surface: BoothSurfaceName) => void
   onMoveItem?: (assignmentId: string, xInches: number, yInches: number) => void
   onDragActiveChange?: (active: boolean) => void
+  onOpenDetailItem?: (assignmentId: string) => void
   floorPlacements: FloorPlacementWithItem[]
-  selectedFloorPlacementId?: string | null
-  onSelectFloorPlacement?: (placementId: string) => void
   onMoveFloorItem?: (placementId: string, xInches: number, yInches: number) => void
+  onOpenFloorDetailItem?: (placementId: string) => void
   onFloorClick?: (xFt: number, zFt: number) => void
 }
 
@@ -82,10 +82,10 @@ export function BoothScene3D({
   onSelectSurface,
   onMoveItem,
   onDragActiveChange,
+  onOpenDetailItem,
   floorPlacements,
-  selectedFloorPlacementId,
-  onSelectFloorPlacement,
   onMoveFloorItem,
+  onOpenFloorDetailItem,
   onFloorClick,
 }: BoothScene3DProps) {
   return (
@@ -117,10 +117,9 @@ export function BoothScene3D({
           item={item}
           boothWidthFt={widthFt}
           boothDepthFt={depthFt}
-          isSelected={selectedFloorPlacementId === placement.id}
-          onSelect={() => onSelectFloorPlacement?.(placement.id)}
           onMove={onMoveFloorItem}
           onDragActiveChange={onDragActiveChange}
+          onOpenDetail={onOpenFloorDetailItem ? () => onOpenFloorDetailItem(placement.id) : undefined}
         />
       ))}
 
@@ -168,6 +167,7 @@ export function BoothScene3D({
                   interactive={isSelected}
                   onMoveItem={onMoveItem}
                   onDragActiveChange={onDragActiveChange}
+                  onOpenDetailItem={onOpenDetailItem}
                 />
               </group>
             ) : (
