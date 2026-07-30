@@ -58,6 +58,7 @@ export function ItemFormDialog({ item, onClose }: ItemFormDialogProps) {
       'Label Title': getString('Label Title'),
       Artist: getString('Artist'),
       Description: getString('Description'),
+      Label: getString('Label'),
       Height: getNumber('Height'),
       Width: getNumber('Width'),
       Depth: getNumber('Depth'),
@@ -138,6 +139,10 @@ export function ItemFormDialog({ item, onClose }: ItemFormDialogProps) {
         <label>
           Description / Notes
           <textarea name="Description" defaultValue={fields?.Description} rows={3} />
+        </label>
+        <label>
+          Label (printed on the label sheet — supports basic Markdown)
+          <textarea name="Label" defaultValue={fields?.Label} rows={3} />
         </label>
 
         <div className="item-dialog__row">
