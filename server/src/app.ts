@@ -9,6 +9,7 @@ import { itemsRoute } from '@/routes/items'
 import { wallsRoute } from '@/routes/walls'
 import { boothsRoute } from '@/routes/booths'
 import { wallAssignmentsRoute } from '@/routes/wall-assignments'
+import { floorPlacementsRoute } from '@/routes/floorPlacements'
 import { salesRoute } from '@/routes/sales'
 import { consignersRoute } from '@/routes/consigners'
 
@@ -32,5 +33,6 @@ app.route('/api/items', itemsRoute)
 app.route('/api/walls', wallsRoute)
 app.route('/api/booths', boothsRoute)
 app.route('/api/wall-assignments', wallAssignmentsRoute)
+app.route('/api/floor-placements', floorPlacementsRoute)
 app.route('/api/sales', salesRoute)
 app.route('/api/consigners', consignersRoute)

@@ -11,9 +11,20 @@ interface WallScene3DProps {
   placedItems: PlacedItem[]
   hideFloor?: boolean
   hideLights?: boolean
+  interactive?: boolean
+  onMoveItem?: (assignmentId: string, xInches: number, yInches: number) => void
+  onDragActiveChange?: (active: boolean) => void
 }
 
-export function WallScene3D({ wall, placedItems, hideFloor, hideLights }: WallScene3DProps) {
+export function WallScene3D({
+  wall,
+  placedItems,
+  hideFloor,
+  hideLights,
+  interactive,
+  onMoveItem,
+  onDragActiveChange,
+}: WallScene3DProps) {
   const widthInches = wall.fields.Width
     ? wallDimensionToInches(wall.fields.Width, wall.fields['Unit of Measure'])
     : undefined
@@ -60,6 +71,9 @@ export function WallScene3D({ wall, placedItems, hideFloor, hideLights }: WallSc
           item={item}
           wallWidthFt={widthFt}
           wallHeightFt={heightFt}
+          interactive={interactive}
+          onMove={onMoveItem}
+          onDragActiveChange={onDragActiveChange}
         />
       ))}
     </>

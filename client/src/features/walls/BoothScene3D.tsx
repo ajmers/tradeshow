@@ -1,7 +1,8 @@
 import * as THREE from 'three'
-import type { Wall } from '@shared'
+import type { FloorPlacement, Item, Wall } from '@shared'
 import { wallDimensionToInches } from '@/features/walls/wallScale'
 import { WallScene3D } from '@/features/walls/WallScene3D'
+import { FloorPlacedItem3D } from '@/features/walls/FloorPlacedItem3D'
 import type { PlacedItem } from '@/features/walls/PlacedItem'
 
 const INCHES_PER_FOOT = 12
@@ -13,6 +14,11 @@ export interface BoothSurfaceOccupant {
   placedItems: PlacedItem[]
 }
 
+export interface FloorPlacementWithItem {
+  placement: FloorPlacement
+  item: Item
+}
+
 interface BoothScene3DProps {
   widthFt: number
   depthFt: number
@@ -20,6 +26,13 @@ interface BoothScene3DProps {
   surfaces: Record<BoothSurfaceName, BoothSurfaceOccupant | null>
   selectedSurface: BoothSurfaceName | null
   onSelectSurface: (surface: BoothSurfaceName) => void
+  onMoveItem?: (assignmentId: string, xInches: number, yInches: number) => void
+  onDragActiveChange?: (active: boolean) => void
+  floorPlacements: FloorPlacementWithItem[]
+  selectedFloorPlacementId?: string | null
+  onSelectFloorPlacement?: (placementId: string) => void
+  onMoveFloorItem?: (placementId: string, xInches: number, yInches: number) => void
+  onFloorClick?: (xFt: number, zFt: number) => void
 }
 
 // Horizontal position + rotation for each of the 4 vertical faces of the booth box,
@@ -67,6 +80,13 @@ export function BoothScene3D({
   surfaces,
   selectedSurface,
   onSelectSurface,
+  onMoveItem,
+  onDragActiveChange,
+  floorPlacements,
+  selectedFloorPlacementId,
+  onSelectFloorPlacement,
+  onMoveFloorItem,
+  onFloorClick,
 }: BoothScene3DProps) {
   return (
     <>
@@ -75,10 +95,34 @@ export function BoothScene3D({
       <directionalLight position={[-widthFt, heightFt * 0.8, -depthFt * 0.5]} intensity={0.3} />
 
       {/* Floor */}
-      <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh
+        position={[0, 0, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        onClick={(event) => {
+          if (!onFloorClick) {
+            return
+          }
+          event.stopPropagation()
+          onFloorClick(event.point.x, event.point.z)
+        }}
+      >
         <planeGeometry args={[widthFt, depthFt]} />
         <meshStandardMaterial color="#d4d4d8" side={THREE.DoubleSide} />
       </mesh>
+
+      {floorPlacements.map(({ placement, item }) => (
+        <FloorPlacedItem3D
+          key={placement.id}
+          placement={placement}
+          item={item}
+          boothWidthFt={widthFt}
+          boothDepthFt={depthFt}
+          isSelected={selectedFloorPlacementId === placement.id}
+          onSelect={() => onSelectFloorPlacement?.(placement.id)}
+          onMove={onMoveFloorItem}
+          onDragActiveChange={onDragActiveChange}
+        />
+      ))}
 
       {SURFACE_NAMES.map((name) => {
         const { x, z, rotation, faceWidthFt } = FACE_TRANSFORMS[name](widthFt, depthFt)
@@ -100,8 +144,15 @@ export function BoothScene3D({
         }
         const position: [number, number, number] = [x, planeHeightFt / 2, z]
 
+        // Open surfaces don't stop propagation: an open wall is a gap you're meant to
+        // see (and click) through, not a pane of glass. If there's a real wall behind
+        // it along the same ray, that wall's own handler fires next and its selection
+        // wins — so you never have to spin the box around just to reach the far side
+        // of an opening. A real wall (occupant) still stops the click at itself.
         const handleClick = (event: { stopPropagation: () => void }) => {
-          event.stopPropagation()
+          if (occupant) {
+            event.stopPropagation()
+          }
           onSelectSurface(name)
         }
 
@@ -109,7 +160,15 @@ export function BoothScene3D({
           <group key={name} position={position} rotation={rotation}>
             {occupant ? (
               <group onClick={handleClick}>
-                <WallScene3D wall={occupant.wall} placedItems={occupant.placedItems} hideFloor hideLights />
+                <WallScene3D
+                  wall={occupant.wall}
+                  placedItems={occupant.placedItems}
+                  hideFloor
+                  hideLights
+                  interactive={isSelected}
+                  onMoveItem={onMoveItem}
+                  onDragActiveChange={onDragActiveChange}
+                />
               </group>
             ) : (
               <>

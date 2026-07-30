@@ -549,6 +549,12 @@ dialog.booth-report-dialog {
   gap: 0.25rem;
 }
 
+.booth-3d-panel__hint {
+  font-size: 0.8125rem;
+  color: light-dark(#52525b, #a1a1aa);
+  margin: 0;
+}
+
 .booth-report {
   padding: 2rem 2.25rem;
   max-height: 85vh;
