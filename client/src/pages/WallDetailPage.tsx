@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Breadcrumb } from '@/components/Breadcrumb'
 import { useBooths } from '@/hooks/useBooths'
 import { useWalls } from '@/hooks/useWalls'
 import { useItems } from '@/hooks/useItems'
 import { useWallAssignments } from '@/hooks/useWallAssignments'
 import { useSales } from '@/hooks/useSales'
+import { useDeleteWall } from '@/hooks/useWallMutations'
 import {
   useCreateWallAssignment,
   useUpdateWallAssignment,
@@ -23,6 +24,7 @@ import { itemFootprintInches, wallDimensionToInches } from '@/features/walls/wal
 
 export function WallDetailPage() {
   const { boothId, wallId } = useParams<{ boothId: string; wallId: string }>()
+  const navigate = useNavigate()
   const booths = useBooths()
   const walls = useWalls()
   const items = useItems()
@@ -31,6 +33,7 @@ export function WallDetailPage() {
   const createAssignment = useCreateWallAssignment()
   const updateAssignment = useUpdateWallAssignment()
   const deleteAssignment = useDeleteWallAssignment()
+  const deleteWall = useDeleteWall()
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null)
   const [detailAssignmentId, setDetailAssignmentId] = useState<string | null>(null)
   const [showGrid, setShowGrid] = useState(true)
@@ -86,6 +89,13 @@ export function WallDetailPage() {
 
   const boothName = booth.fields['Booth Name'] ?? 'Untitled booth'
   const wallName = wall.fields['Wall Name'] ?? 'Untitled wall'
+
+  const handleDeleteWall = () => {
+    if (!window.confirm(`Delete "${wallName}"? This also deletes every item placement on it. This cannot be undone.`)) {
+      return
+    }
+    deleteWall.mutate(wall.id, { onSuccess: () => navigate(`/booth-planner/${booth.id}`) })
+  }
 
   const boothWallIds = new Set(booth.fields.Walls ?? [])
   const boothWalls = wallsData.filter((entry) => boothWallIds.has(entry.id))
@@ -234,6 +244,9 @@ export function WallDetailPage() {
           <WallColorPicker wall={wall} boothWalls={boothWalls} />
           <button type="button" onClick={() => setShowGrid((prev) => !prev)}>
             {showGrid ? 'Hide gridlines' : 'Show gridlines'}
+          </button>
+          <button type="button" onClick={handleDeleteWall} disabled={deleteWall.isPending}>
+            {deleteWall.isPending ? 'Deleting…' : 'Delete Wall'}
           </button>
         </div>
       </div>

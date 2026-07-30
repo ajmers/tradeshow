@@ -33,3 +33,10 @@ export async function updateWall(id: string, input: UpdateWallInput): Promise<Wa
   }
   return wallSchema.parse(await res.json())
 }
+
+export async function deleteWall(id: string): Promise<void> {
+  const res = await apiFetch(`/api/walls/${id}`, { method: 'DELETE' })
+  if (!res.ok) {
+    throw new Error(`Failed to delete wall: ${res.status}`)
+  }
+}

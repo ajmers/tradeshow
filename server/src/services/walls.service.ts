@@ -5,7 +5,8 @@ import {
   type CreateWallInput,
   type UpdateWallInput,
 } from '@shared'
-import { listAllRecords, createRecord, updateRecord } from '@/lib/airtable'
+import { listAllRecords, createRecord, updateRecord, deleteRecord } from '@/lib/airtable'
+import { listWallAssignments, deleteWallAssignment } from '@/services/wallAssignments.service'
 
 const TABLE = 'Walls'
 
@@ -26,4 +27,13 @@ export async function updateWall(
 ): Promise<Wall> {
   const record = await updateRecord<WallFields>(baseId, TABLE, id, input)
   return wallSchema.parse(record)
+}
+
+export async function deleteWall(baseId: string, id: string): Promise<void> {
+  const assignments = await listWallAssignments(baseId)
+  const assignmentsOnWall = assignments.filter((assignment) => assignment.fields.Wall?.includes(id))
+  await Promise.all(
+    assignmentsOnWall.map((assignment) => deleteWallAssignment(baseId, assignment.id)),
+  )
+  await deleteRecord(baseId, TABLE, id)
 }

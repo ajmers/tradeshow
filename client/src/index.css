@@ -396,6 +396,10 @@ dialog.item-dialog textarea {
   background: light-dark(#f4f4f5, #27272a);
 }
 
+.booth-actions-menu__delete {
+  color: light-dark(#b91c1c, #f87171);
+}
+
 .view-toggle {
   display: flex;
   border: 1px solid light-dark(#d4d4d8, #3f3f46);

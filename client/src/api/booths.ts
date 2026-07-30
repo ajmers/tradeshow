@@ -33,3 +33,10 @@ export async function updateBooth(id: string, input: UpdateBoothInput): Promise<
   }
   return boothSchema.parse(await res.json())
 }
+
+export async function deleteBooth(id: string): Promise<void> {
+  const res = await apiFetch(`/api/booths/${id}`, { method: 'DELETE' })
+  if (!res.ok) {
+    throw new Error(`Failed to delete booth: ${res.status}`)
+  }
+}

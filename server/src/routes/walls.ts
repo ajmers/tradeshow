@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { createWallInputSchema, updateWallInputSchema } from '@shared'
-import { listWalls, createWall, updateWall } from '@/services/walls.service'
+import { listWalls, createWall, updateWall, deleteWall } from '@/services/walls.service'
 import { requireAuth } from '@/middleware/auth'
 import type { AppEnv } from '@/lib/hono'
 
@@ -19,4 +19,8 @@ export const wallsRoute = new Hono<AppEnv>()
     const input = updateWallInputSchema.parse(await c.req.json())
     const wall = await updateWall(c.get('airtableBaseId'), c.req.param('id'), input)
     return c.json(wall)
+  })
+  .delete('/:id', async (c) => {
+    await deleteWall(c.get('airtableBaseId'), c.req.param('id'))
+    return c.body(null, 204)
   })

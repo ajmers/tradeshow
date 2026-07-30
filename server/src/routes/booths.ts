@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { createBoothInputSchema, updateBoothInputSchema } from '@shared'
-import { listBooths, createBooth, updateBooth } from '@/services/booths.service'
+import { listBooths, createBooth, updateBooth, deleteBooth } from '@/services/booths.service'
 import { requireAuth } from '@/middleware/auth'
 import type { AppEnv } from '@/lib/hono'
 
@@ -19,4 +19,8 @@ export const boothsRoute = new Hono<AppEnv>()
     const input = updateBoothInputSchema.parse(await c.req.json())
     const booth = await updateBooth(c.get('airtableBaseId'), c.req.param('id'), input)
     return c.json(booth)
+  })
+  .delete('/:id', async (c) => {
+    await deleteBooth(c.get('airtableBaseId'), c.req.param('id'))
+    return c.body(null, 204)
   })

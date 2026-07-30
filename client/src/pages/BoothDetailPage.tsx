@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Breadcrumb } from '@/components/Breadcrumb'
 import { useBooths } from '@/hooks/useBooths'
 import { useWalls } from '@/hooks/useWalls'
@@ -7,6 +7,7 @@ import { useItems } from '@/hooks/useItems'
 import { useWallAssignments } from '@/hooks/useWallAssignments'
 import { useSales } from '@/hooks/useSales'
 import { useBaseInfo } from '@/hooks/useBaseInfo'
+import { useDeleteBooth } from '@/hooks/useBoothMutations'
 import { WallsGrid, type WallWithPlacements } from '@/features/walls/WallsGrid'
 import { WallFormDialog } from '@/features/walls/WallFormDialog'
 import { Booth3DView } from '@/features/walls/Booth3DView'
@@ -15,7 +16,13 @@ import type { PlacedItem } from '@/features/walls/PlacedItem'
 
 type ViewMode = '2d' | '3d'
 
-function BoothActionsMenu({ onRunReport }: { onRunReport: () => void }) {
+function BoothActionsMenu({
+  onRunReport,
+  onDelete,
+}: {
+  onRunReport: () => void
+  onDelete: () => void
+}) {
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -56,6 +63,17 @@ function BoothActionsMenu({ onRunReport }: { onRunReport: () => void }) {
           >
             Run Booth Report
           </button>
+          <button
+            type="button"
+            role="menuitem"
+            className="booth-actions-menu__delete"
+            onClick={() => {
+              setOpen(false)
+              onDelete()
+            }}
+          >
+            Delete Booth
+          </button>
         </div>
       )}
     </div>
@@ -64,12 +82,14 @@ function BoothActionsMenu({ onRunReport }: { onRunReport: () => void }) {
 
 export function BoothDetailPage() {
   const { boothId } = useParams<{ boothId: string }>()
+  const navigate = useNavigate()
   const booths = useBooths()
   const walls = useWalls()
   const items = useItems()
   const wallAssignments = useWallAssignments()
   const sales = useSales()
   const baseInfo = useBaseInfo()
+  const deleteBooth = useDeleteBooth()
   const [showAddWall, setShowAddWall] = useState(false)
   const [showReport, setShowReport] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('2d')
@@ -107,6 +127,18 @@ export function BoothDetailPage() {
   }
 
   const boothName = booth.fields['Booth Name'] ?? 'Untitled booth'
+
+  const handleDeleteBooth = () => {
+    if (
+      !window.confirm(
+        `Delete "${boothName}"? This also deletes every wall and item placement in it. This cannot be undone.`,
+      )
+    ) {
+      return
+    }
+    deleteBooth.mutate(booth.id, { onSuccess: () => navigate('/booth-planner') })
+  }
+
   const wallIds = new Set(booth.fields.Walls ?? [])
   const boothWalls = wallsData.filter((wall) => wallIds.has(wall.id))
   const boothAssignments = wallAssignmentsData.filter((assignment) =>
@@ -133,7 +165,7 @@ export function BoothDetailPage() {
       <div className="page-toolbar page-toolbar--booth">
         <div className="page-toolbar__title">
           <h1>{boothName}</h1>
-          <BoothActionsMenu onRunReport={() => setShowReport(true)} />
+          <BoothActionsMenu onRunReport={() => setShowReport(true)} onDelete={handleDeleteBooth} />
         </div>
         {booth3dEnabled && (
           <div className="view-toggle" role="group" aria-label="View mode">
