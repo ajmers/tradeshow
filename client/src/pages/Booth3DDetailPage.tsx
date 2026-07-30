@@ -11,7 +11,11 @@ import { useSales } from '@/hooks/useSales'
 import { useFloorPlacements } from '@/hooks/useFloorPlacements'
 import { useUpdateBooth } from '@/hooks/useBoothMutations'
 import { useUpdateWall } from '@/hooks/useWallMutations'
-import { useCreateWallAssignment, useUpdateWallAssignment } from '@/hooks/useWallAssignmentMutations'
+import {
+  useCreateWallAssignment,
+  useUpdateWallAssignment,
+  useDeleteWallAssignment,
+} from '@/hooks/useWallAssignmentMutations'
 import {
   useCreateFloorPlacement,
   useUpdateFloorPlacement,
@@ -24,9 +28,12 @@ import {
   type FloorPlacementWithItem,
 } from '@/features/walls/BoothScene3D'
 import { AvailableItemsTray } from '@/features/walls/AvailableItemsTray'
+import { ItemDetailDialog } from '@/features/walls/ItemDetailDialog'
 import { findEmptySpot } from '@/features/walls/findEmptySpot'
 import { itemFloorFootprintInches, itemFootprintInches, wallDimensionToInches } from '@/features/walls/wallScale'
 import type { PlacedItem } from '@/features/walls/PlacedItem'
+
+type DetailTarget = { kind: 'wall'; assignmentId: string } | { kind: 'floor'; placementId: string }
 
 const SURFACE_NAMES: BoothSurfaceName[] = ['Front', 'Back', 'Left', 'Right']
 
@@ -94,6 +101,7 @@ export function Booth3DDetailPage() {
   const updateWall = useUpdateWall()
   const createAssignment = useCreateWallAssignment()
   const updateAssignment = useUpdateWallAssignment()
+  const deleteAssignment = useDeleteWallAssignment()
   const createFloorPlacement = useCreateFloorPlacement()
   const updateFloorPlacement = useUpdateFloorPlacement()
   const deleteFloorPlacement = useDeleteFloorPlacement()
@@ -101,7 +109,7 @@ export function Booth3DDetailPage() {
   const [editingDimensions, setEditingDimensions] = useState(false)
   const [orbitEnabled, setOrbitEnabled] = useState(true)
   const [itemToPlaceOnFloor, setItemToPlaceOnFloor] = useState('')
-  const [selectedFloorPlacementId, setSelectedFloorPlacementId] = useState<string | null>(null)
+  const [detailTarget, setDetailTarget] = useState<DetailTarget | null>(null)
 
   const isPending =
     booths.isPending ||
@@ -192,7 +200,7 @@ export function Booth3DDetailPage() {
   const floorPlacementsWithItems: FloorPlacementWithItem[] = boothFloorPlacements
     .map((placement) => {
       const item = itemsData.find((entry) => entry.id === placement.fields.Item?.[0])
-      return item ? { placement, item } : null
+      return item ? { placement, item, isSold: soldItemIds.has(item.id) } : null
     })
     .filter((entry): entry is FloorPlacementWithItem => entry !== null)
 
@@ -297,14 +305,18 @@ export function Booth3DDetailPage() {
     })
   }
 
-  function handleRemoveFloorItem(placementId: string) {
-    deleteFloorPlacement.mutate(placementId)
-    setSelectedFloorPlacementId(null)
-  }
+  // Items already placed anywhere in the booth (walls or floor), flattened, so the
+  // detail dialog can look one up by whichever id opened it.
+  const boothPlacedItems = boothWalls.flatMap((wall) => placedItemsForWall(wall.id))
 
-  const selectedFloorItem = floorPlacementsWithItems.find(
-    (entry) => entry.placement.id === selectedFloorPlacementId,
-  )
+  const detailWallPlacedItem =
+    detailTarget?.kind === 'wall'
+      ? boothPlacedItems.find((entry) => entry.assignment.id === detailTarget.assignmentId)
+      : undefined
+  const detailFloorItem =
+    detailTarget?.kind === 'floor'
+      ? floorPlacementsWithItems.find((entry) => entry.placement.id === detailTarget.placementId)
+      : undefined
 
   return (
     <main>
@@ -338,10 +350,10 @@ export function Booth3DDetailPage() {
                   onSelectSurface={setSelectedSurface}
                   onMoveItem={handleMoveItem}
                   onDragActiveChange={(active) => setOrbitEnabled(!active)}
+                  onOpenDetailItem={(assignmentId) => setDetailTarget({ kind: 'wall', assignmentId })}
                   floorPlacements={floorPlacementsWithItems}
-                  selectedFloorPlacementId={selectedFloorPlacementId}
-                  onSelectFloorPlacement={setSelectedFloorPlacementId}
                   onMoveFloorItem={handleMoveFloorItem}
+                  onOpenFloorDetailItem={(placementId) => setDetailTarget({ kind: 'floor', placementId })}
                   onFloorClick={handleFloorClick}
                 />
                 <OrbitControls target={[0, heightFt! / 2, 0]} enabled={orbitEnabled} />
@@ -375,7 +387,8 @@ export function Booth3DDetailPage() {
                   {selectedOccupant && (
                     <>
                       <p className="booth-3d-panel__hint">
-                        Drag items on the wall to reposition them. Click an item below to add it.
+                        Drag items to reposition them, or click one to sell or remove it. Click an
+                        item below to add it.
                       </p>
                       <AvailableItemsTray items={availableItems} onSelect={handleAddItemToSelectedWall} />
                     </>
@@ -389,22 +402,7 @@ export function Booth3DDetailPage() {
               <hr />
 
               <h3>Floor</h3>
-              {selectedFloorItem ? (
-                <>
-                  <p className="booth-3d-panel__hint">
-                    {selectedFloorItem.item.fields.Title ?? 'Untitled'} — drag it on the floor to move it.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveFloorItem(selectedFloorItem.placement.id)}
-                  >
-                    Remove from floor
-                  </button>
-                  <button type="button" onClick={() => setSelectedFloorPlacementId(null)}>
-                    Done
-                  </button>
-                </>
-              ) : itemToPlaceOnFloor ? (
+              {itemToPlaceOnFloor ? (
                 <>
                   <p className="booth-3d-panel__hint">
                     Click anywhere on the floor to place{' '}
@@ -417,7 +415,8 @@ export function Booth3DDetailPage() {
               ) : (
                 <>
                   <p className="booth-3d-panel__hint">
-                    Click an item, then click the floor to place it freestanding.
+                    Click an item, then click the floor to place it freestanding. Drag placed
+                    items to reposition them, or click one to sell or remove it.
                   </p>
                   <AvailableItemsTray items={availableItems} onSelect={setItemToPlaceOnFloor} />
                 </>
@@ -425,6 +424,26 @@ export function Booth3DDetailPage() {
             </aside>
           </div>
         </>
+      )}
+
+      {detailWallPlacedItem && (
+        <ItemDetailDialog
+          item={detailWallPlacedItem.item}
+          boothId={boothRecordId}
+          removeLabel="Remove from wall"
+          onRemove={() => deleteAssignment.mutateAsync(detailWallPlacedItem.assignment.id)}
+          onClose={() => setDetailTarget(null)}
+        />
+      )}
+
+      {detailFloorItem && (
+        <ItemDetailDialog
+          item={detailFloorItem.item}
+          boothId={boothRecordId}
+          removeLabel="Remove from floor"
+          onRemove={() => deleteFloorPlacement.mutateAsync(detailFloorItem.placement.id)}
+          onClose={() => setDetailTarget(null)}
+        />
       )}
     </main>
   )

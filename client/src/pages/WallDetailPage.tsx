@@ -261,7 +261,13 @@ export function WallDetailPage() {
       </section>
 
       {detailItem && (
-        <ItemDetailDialog placedItem={detailItem} boothId={booth.id} onClose={handleCloseDetail} />
+        <ItemDetailDialog
+          item={detailItem.item}
+          boothId={booth.id}
+          removeLabel="Remove from wall"
+          onRemove={() => deleteAssignment.mutateAsync(detailItem.assignment.id)}
+          onClose={handleCloseDetail}
+        />
       )}
     </main>
   )

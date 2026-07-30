@@ -17,6 +17,7 @@ export interface BoothSurfaceOccupant {
 export interface FloorPlacementWithItem {
   placement: FloorPlacement
   item: Item
+  isSold: boolean
 }
 
 interface BoothScene3DProps {
@@ -28,10 +29,10 @@ interface BoothScene3DProps {
   onSelectSurface: (surface: BoothSurfaceName) => void
   onMoveItem?: (assignmentId: string, xInches: number, yInches: number) => void
   onDragActiveChange?: (active: boolean) => void
+  onOpenDetailItem?: (assignmentId: string) => void
   floorPlacements: FloorPlacementWithItem[]
-  selectedFloorPlacementId?: string | null
-  onSelectFloorPlacement?: (placementId: string) => void
   onMoveFloorItem?: (placementId: string, xInches: number, yInches: number) => void
+  onOpenFloorDetailItem?: (placementId: string) => void
   onFloorClick?: (xFt: number, zFt: number) => void
 }
 
@@ -82,10 +83,10 @@ export function BoothScene3D({
   onSelectSurface,
   onMoveItem,
   onDragActiveChange,
+  onOpenDetailItem,
   floorPlacements,
-  selectedFloorPlacementId,
-  onSelectFloorPlacement,
   onMoveFloorItem,
+  onOpenFloorDetailItem,
   onFloorClick,
 }: BoothScene3DProps) {
   return (
@@ -110,17 +111,17 @@ export function BoothScene3D({
         <meshStandardMaterial color="#d4d4d8" side={THREE.DoubleSide} />
       </mesh>
 
-      {floorPlacements.map(({ placement, item }) => (
+      {floorPlacements.map(({ placement, item, isSold }) => (
         <FloorPlacedItem3D
           key={placement.id}
           placement={placement}
           item={item}
           boothWidthFt={widthFt}
           boothDepthFt={depthFt}
-          isSelected={selectedFloorPlacementId === placement.id}
-          onSelect={() => onSelectFloorPlacement?.(placement.id)}
+          isSold={isSold}
           onMove={onMoveFloorItem}
           onDragActiveChange={onDragActiveChange}
+          onOpenDetail={onOpenFloorDetailItem ? () => onOpenFloorDetailItem(placement.id) : undefined}
         />
       ))}
 
@@ -168,6 +169,7 @@ export function BoothScene3D({
                   interactive={isSelected}
                   onMoveItem={onMoveItem}
                   onDragActiveChange={onDragActiveChange}
+                  onOpenDetailItem={onOpenDetailItem}
                 />
               </group>
             ) : (
