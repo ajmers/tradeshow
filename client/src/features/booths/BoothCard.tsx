@@ -39,7 +39,7 @@ const STATUS_LABELS: Record<EventStatus, string> = {
   past: 'Past',
 }
 
-export function BoothCard({ booth, basePath = '/booth-planner' }: { booth: Booth; basePath?: string }) {
+export function BoothCard({ booth }: { booth: Booth }) {
   const fields = booth.fields
   const start = formatDate(fields['Event Start Date'])
   const end = formatDate(fields['Event End Date'])
@@ -61,7 +61,7 @@ export function BoothCard({ booth, basePath = '/booth-planner' }: { booth: Booth
 
   return (
     <>
-      <Link to={`${basePath}/${booth.id}`} className="booth-card">
+      <Link to={`/booth-planner/${booth.id}`} className="booth-card">
         <div className="booth-card__header">
           <h3>{fields['Booth Name'] ?? 'Untitled booth'}</h3>
           {status && (

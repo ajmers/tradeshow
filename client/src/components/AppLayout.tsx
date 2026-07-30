@@ -8,17 +8,16 @@ import { SignOutButton } from '@/features/auth/SignOutButton'
 function boothIdFromPathname(pathname: string): string | undefined {
   const boothDetail = matchPath('/booth-planner/:boothId', pathname)
   const wallDetail = matchPath('/booth-planner/:boothId/walls/:wallId', pathname)
-  const booth3D = matchPath('/booth-planner-3d/:boothId', pathname)
-  return boothDetail?.params.boothId ?? wallDetail?.params.boothId ?? booth3D?.params.boothId
+  return boothDetail?.params.boothId ?? wallDetail?.params.boothId
 }
 
-// Tracks the most recently viewed booth so the Booth Planner and Booth Planner 3D
-// nav links can jump straight back into it — crossing between the two flows (or
-// coming back after visiting an unrelated page) lands on the same booth instead of
-// resetting to the booth list. AppLayout stays mounted across route changes, so
-// plain component state here persists for the rest of the session. Updated during
-// render (React's documented "adjusting state during render" pattern) rather than in
-// an effect, since it only needs to react to the pathname the component already saw.
+// Tracks the most recently viewed booth so the Booth Planner nav link can jump
+// straight back into it — coming back after visiting an unrelated page lands on the
+// same booth instead of resetting to the booth list. AppLayout stays mounted across
+// route changes, so plain component state here persists for the rest of the session.
+// Updated during render (React's documented "adjusting state during render" pattern)
+// rather than in an effect, since it only needs to react to the pathname the
+// component already saw.
 function useLastBoothId(): string | undefined {
   const location = useLocation()
   const [seenPathname, setSeenPathname] = useState(location.pathname)
@@ -45,11 +44,6 @@ export function AppLayout() {
     {
       to: lastBoothId ? `/booth-planner/${lastBoothId}` : '/booth-planner',
       label: 'Booth Planner',
-      end: false,
-    },
-    {
-      to: lastBoothId ? `/booth-planner-3d/${lastBoothId}` : '/booth-planner-3d',
-      label: 'Booth Planner 3D',
       end: false,
     },
     { to: '/label-printer', label: 'Label Printer', end: false },
