@@ -133,16 +133,16 @@ export function ItemFormDialog({ item, onClose }: ItemFormDialogProps) {
           <input name="Label Title" defaultValue={fields?.['Label Title']} />
         </label>
         <label>
+          Label (printed on the label sheet — supports basic Markdown)
+          <textarea name="Label" defaultValue={fields?.Label} rows={3} />
+        </label>
+        <label>
           Artist
           <input name="Artist" defaultValue={fields?.Artist} />
         </label>
         <label>
           Description / Notes
           <textarea name="Description" defaultValue={fields?.Description} rows={3} />
-        </label>
-        <label>
-          Label (printed on the label sheet — supports basic Markdown)
-          <textarea name="Label" defaultValue={fields?.Label} rows={3} />
         </label>
 
         <div className="item-dialog__row">
