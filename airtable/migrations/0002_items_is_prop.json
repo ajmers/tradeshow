@@ -1,0 +1,11 @@
+{
+  "description": "Marks an Item as a display prop rather than inventory for sale.",
+  "fields": [
+    {
+      "table": "Items",
+      "name": "Is Prop",
+      "type": "checkbox",
+      "options": { "icon": "check", "color": "grayBright" }
+    }
+  ]
+}

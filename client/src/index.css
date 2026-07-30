@@ -287,6 +287,12 @@ dialog.item-dialog label {
   font-size: 0.875rem;
 }
 
+dialog.item-dialog label.item-dialog__checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 dialog.item-dialog input,
 dialog.item-dialog select,
 dialog.item-dialog textarea {
@@ -1040,6 +1046,13 @@ dialog.item-detail-dialog::backdrop {
 
 .item-detail__description {
   white-space: pre-wrap;
+}
+
+.item-detail__prop-note {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-style: italic;
+  color: light-dark(#52525b, #a1a1aa);
 }
 
 .item-detail__error {

@@ -67,6 +67,7 @@ export function ItemFormDialog({ item, onClose }: ItemFormDialogProps) {
       Consigner: getString('Consigner'),
       'List Price': getNumber('List Price'),
       Discount: getNumber('Discount'),
+      'Is Prop': formData.get('Is Prop') === 'on',
     }
 
     const imageFiles = formData
@@ -191,6 +192,11 @@ export function ItemFormDialog({ item, onClose }: ItemFormDialogProps) {
             <input name="Discount" type="number" step="any" min="0" defaultValue={fields?.Discount} />
           </label>
         </div>
+
+        <label className="item-dialog__checkbox">
+          <input name="Is Prop" type="checkbox" defaultChecked={fields?.['Is Prop']} />
+          Is prop (not for sale)
+        </label>
 
         <label>
           Photos

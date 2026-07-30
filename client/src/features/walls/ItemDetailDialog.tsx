@@ -106,14 +106,17 @@ export function ItemDetailDialog({ item, boothId, removeLabel, onRemove, onClose
             </p>
           )}
           {fields.Description && <p className="item-detail__description">{fields.Description}</p>}
+          {fields['Is Prop'] && <p className="item-detail__prop-note">Prop — not for sale</p>}
 
           <div className="item-detail__actions">
             <button type="button" onClick={handleRemove} disabled={removing}>
               {removing ? 'Removing…' : removeLabel}
             </button>
-            <button type="button" onClick={() => setMode('sell')}>
-              Sell
-            </button>
+            {!fields['Is Prop'] && (
+              <button type="button" onClick={() => setMode('sell')}>
+                Sell
+              </button>
+            )}
           </div>
         </div>
       ) : (
