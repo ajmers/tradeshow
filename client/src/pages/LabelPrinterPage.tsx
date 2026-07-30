@@ -149,21 +149,22 @@ export function LabelPrinterPage() {
                 ))}
               </select>
             </label>
-            <label>
-              Wall
-              <select
-                value={wallFilter}
-                onChange={(event) => handleWallFilterChange(event.target.value)}
-                disabled={!boothFilter}
-              >
-                <option value="">All walls in this booth</option>
-                {wallsInSelectedBooth.map((wall) => (
-                  <option key={wall.id} value={wall.id}>
-                    {wall.fields['Wall Name'] ?? 'Untitled wall'}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {boothFilter && (
+              <label>
+                Wall
+                <select
+                  value={wallFilter}
+                  onChange={(event) => handleWallFilterChange(event.target.value)}
+                >
+                  <option value="">All walls in this booth</option>
+                  {wallsInSelectedBooth.map((wall) => (
+                    <option key={wall.id} value={wall.id}>
+                      {wall.fields['Wall Name'] ?? 'Untitled wall'}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
           </div>
           <div className="label-printer-filters__pills">
             {!boothFilter && (
