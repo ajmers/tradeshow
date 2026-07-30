@@ -432,7 +432,10 @@ section {
 }
 
 .word-rotate__word {
-  display: none;
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: 0;
   opacity: 0;
   color: var(--gold-bright);
   animation: word-rotate-fade 12s infinite;
@@ -454,10 +457,20 @@ section {
   animation-delay: 9s;
 }
 
+/* Uses only opacity/max-width (both continuously interpolated, universally
+   supported) rather than animating `display`, which browsers only added
+   discrete-animation support for recently and unevenly. max-width jumps to a
+   generous 20em almost instantly (0% -> 0.5%) while still fully transparent,
+   so the fade-in reads as a pure crossfade rather than a width "unfurl"; it
+   only collapses back to 0 (22%) after opacity has already reached 0, for the
+   same reason on the way out. */
 @keyframes word-rotate-fade {
   0% {
     opacity: 0;
-    display: inline-block;
+    max-width: 0;
+  }
+  0.5% {
+    max-width: 20em;
   }
   4% {
     opacity: 1;
@@ -465,25 +478,27 @@ section {
   18% {
     opacity: 1;
   }
-  22% {
+  21.5% {
     opacity: 0;
   }
-  22.01% {
-    display: none;
+  22% {
+    max-width: 0;
   }
   100% {
     opacity: 0;
-    display: none;
+    max-width: 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .word-rotate__word {
     animation: none;
-    display: none;
+    max-width: 0;
+    opacity: 0;
   }
   .word-rotate__word:nth-child(1) {
-    display: inline-block;
+    max-width: 20em;
+    opacity: 1;
   }
 }
 
