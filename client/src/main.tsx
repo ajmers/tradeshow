@@ -1,17 +1,16 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Analytics } from '@vercel/analytics/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from 'react-router-dom'
 import { router } from '@/routes'
 import { AuthProvider } from '@/features/auth/AuthProvider'
 import { AuthGate } from '@/features/auth/AuthGate'
 import { installStaleChunkRecovery } from '@/lib/staleChunkRecovery'
+import { queryClient } from '@/lib/queryClient'
 import '@/index.css'
 
 installStaleChunkRecovery()
-
-const queryClient = new QueryClient()
 
 const rootElement = document.getElementById('root')
 if (!rootElement) {

@@ -6,6 +6,7 @@ import { useUpdateUserFeatureFlags } from '@/hooks/useUpdateUserFeatureFlags'
 
 const FEATURES: { key: keyof FeatureFlags; label: string }[] = [
   { key: 'boothPlanner3d', label: '3D Booth Planner' },
+  { key: 'labelPrinter', label: 'Label Printer' },
 ]
 
 export function AdminPage() {

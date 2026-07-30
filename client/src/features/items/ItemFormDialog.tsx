@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { Item, CreateItemInput, UpdateItemInput } from '@shared'
 import { useCreateItem, useUpdateItem, useUploadItemPhoto } from '@/hooks/useItemMutations'
+import { useBaseInfo } from '@/hooks/useBaseInfo'
 
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024
 
@@ -25,6 +26,10 @@ export function ItemFormDialog({ item, onClose }: ItemFormDialogProps) {
   const createItem = useCreateItem()
   const updateItem = useUpdateItem()
   const uploadPhoto = useUploadItemPhoto()
+  const baseInfo = useBaseInfo()
+  // Defaults to enabled while base info is still loading, so the fields don't flash
+  // away and back once it resolves (it's normally already cached from AppLayout).
+  const labelPrinterEnabled = baseInfo.data?.featureFlags.labelPrinter ?? true
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -128,14 +133,18 @@ export function ItemFormDialog({ item, onClose }: ItemFormDialogProps) {
           Title
           <input name="Title" defaultValue={fields?.Title} required />
         </label>
-        <label>
-          Label Title
-          <input name="Label Title" defaultValue={fields?.['Label Title']} />
-        </label>
-        <label>
-          Label (printed on the label sheet — supports basic Markdown)
-          <textarea name="Label" defaultValue={fields?.Label} rows={3} />
-        </label>
+        {labelPrinterEnabled && (
+          <>
+            <label>
+              Label Title
+              <input name="Label Title" defaultValue={fields?.['Label Title']} />
+            </label>
+            <label>
+              Label (printed on the label sheet — supports basic Markdown)
+              <textarea name="Label" defaultValue={fields?.Label} rows={3} />
+            </label>
+          </>
+        )}
         <label>
           Artist
           <input name="Artist" defaultValue={fields?.Artist} />
