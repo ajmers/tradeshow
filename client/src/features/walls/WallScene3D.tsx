@@ -66,13 +66,14 @@ export function WallScene3D({
         </mesh>
       )}
 
-      {placedItems.map(({ assignment, item }) => (
+      {placedItems.map(({ assignment, item, isSold }) => (
         <PlacedItem3D
           key={assignment.id}
           assignment={assignment}
           item={item}
           wallWidthFt={widthFt}
           wallHeightFt={heightFt}
+          isSold={isSold}
           interactive={interactive}
           onMove={onMoveItem}
           onDragActiveChange={onDragActiveChange}

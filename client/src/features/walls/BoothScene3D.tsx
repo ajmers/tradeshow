@@ -17,6 +17,7 @@ export interface BoothSurfaceOccupant {
 export interface FloorPlacementWithItem {
   placement: FloorPlacement
   item: Item
+  isSold: boolean
 }
 
 interface BoothScene3DProps {
@@ -110,13 +111,14 @@ export function BoothScene3D({
         <meshStandardMaterial color="#d4d4d8" side={THREE.DoubleSide} />
       </mesh>
 
-      {floorPlacements.map(({ placement, item }) => (
+      {floorPlacements.map(({ placement, item, isSold }) => (
         <FloorPlacedItem3D
           key={placement.id}
           placement={placement}
           item={item}
           boothWidthFt={widthFt}
           boothDepthFt={depthFt}
+          isSold={isSold}
           onMove={onMoveFloorItem}
           onDragActiveChange={onDragActiveChange}
           onOpenDetail={onOpenFloorDetailItem ? () => onOpenFloorDetailItem(placement.id) : undefined}

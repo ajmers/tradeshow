@@ -4,6 +4,7 @@ import type { ThreeEvent } from '@react-three/fiber'
 import type { Item, WallAssignment } from '@shared'
 import { itemFootprintInches, toInches } from '@/features/walls/wallScale'
 import { useItemTexture3D } from '@/features/walls/useItemTexture3D'
+import { SoldBadge3D } from '@/features/walls/SoldBadge3D'
 
 const INCHES_PER_FOOT = 12
 // Sits just in front of the wall plane so item textures don't z-fight with it.
@@ -17,6 +18,7 @@ interface PlacedItem3DProps {
   item: Item
   wallWidthFt: number
   wallHeightFt: number
+  isSold?: boolean
   /** Only the selected wall's items are draggable, so items on other surfaces don't
    *  intercept clicks meant for orbiting the camera. */
   interactive?: boolean
@@ -36,6 +38,7 @@ export function PlacedItem3D({
   item,
   wallWidthFt,
   wallHeightFt,
+  isSold,
   interactive,
   onMove,
   onDragActiveChange,
@@ -143,6 +146,29 @@ export function PlacedItem3D({
       }
     : {}
 
+  // Same top-right-corner placement as the 2D canvas's badge, clamped to the item's
+  // own size, then rotated by the same amount as the item so it stays in that corner
+  // regardless of rotation.
+  const badgeWidthFt = Math.min(0.6, widthFt)
+  const badgeHeightFt = Math.min(0.25, heightFt)
+  const cos = Math.cos(rotationZ)
+  const sin = Math.sin(rotationZ)
+  const localOffsetX = widthFt / 2 - badgeWidthFt / 2
+  const localOffsetY = heightFt / 2 - badgeHeightFt / 2
+  const badgePosition: [number, number, number] = [
+    x + localOffsetX * cos - localOffsetY * sin,
+    y + localOffsetX * sin + localOffsetY * cos,
+    Z_OFFSET_FT + depthFt + 0.02,
+  ]
+  const soldBadge = isSold && (
+    <SoldBadge3D
+      position={badgePosition}
+      rotation={[0, 0, rotationZ]}
+      width={badgeWidthFt}
+      height={badgeHeightFt}
+    />
+  )
+
   if (depthFt > 0) {
     // A real 3D box: its back face rests flush against the wall (plus the same
     // small offset used for flat items) and it extrudes outward by its own depth,
@@ -150,40 +176,46 @@ export function PlacedItem3D({
     // [+x, -x, +y, -y, +z, -z]; +z is the face pointing away from the wall, into
     // the room, so that's the only one that gets the item's photo.
     return (
-      <mesh position={[x, y, Z_OFFSET_FT + depthFt / 2]} rotation={[0, 0, rotationZ]} {...dragHandlers}>
-        <boxGeometry args={[widthFt, heightFt, depthFt]} />
-        <meshStandardMaterial attach="material-0" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
-        <meshStandardMaterial attach="material-1" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
-        <meshStandardMaterial attach="material-2" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
-        <meshStandardMaterial attach="material-3" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
-        {/* Unlit, like the flat-plane case below — meshStandardMaterial would need
-            scene lighting to render the photo at full brightness, making it look dim
-            or washed-out depending on the light angle. Kept as a single material
-            (only `map`/`color` change) rather than swapping between mesh*Material
-            types when the texture loads, since switching element types here would
-            briefly leave this slot of the material array empty, crashing the
-            raycaster if a pointer event lands in that instant. */}
-        <meshBasicMaterial
-          ref={boxFrontMaterialRef}
-          attach="material-4"
-          map={texture ?? undefined}
-          color={texture ? '#ffffff' : '#fafafa'}
-          toneMapped={false}
-          side={THREE.DoubleSide}
-        />
-        <meshStandardMaterial attach="material-5" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
-      </mesh>
+      <>
+        <mesh position={[x, y, Z_OFFSET_FT + depthFt / 2]} rotation={[0, 0, rotationZ]} {...dragHandlers}>
+          <boxGeometry args={[widthFt, heightFt, depthFt]} />
+          <meshStandardMaterial attach="material-0" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
+          <meshStandardMaterial attach="material-1" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
+          <meshStandardMaterial attach="material-2" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
+          <meshStandardMaterial attach="material-3" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
+          {/* Unlit, like the flat-plane case below — meshStandardMaterial would need
+              scene lighting to render the photo at full brightness, making it look dim
+              or washed-out depending on the light angle. Kept as a single material
+              (only `map`/`color` change) rather than swapping between mesh*Material
+              types when the texture loads, since switching element types here would
+              briefly leave this slot of the material array empty, crashing the
+              raycaster if a pointer event lands in that instant. */}
+          <meshBasicMaterial
+            ref={boxFrontMaterialRef}
+            attach="material-4"
+            map={texture ?? undefined}
+            color={texture ? '#ffffff' : '#fafafa'}
+            toneMapped={false}
+            side={THREE.DoubleSide}
+          />
+          <meshStandardMaterial attach="material-5" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
+        </mesh>
+        {soldBadge}
+      </>
     )
   }
 
   return (
-    <mesh position={[x, y, Z_OFFSET_FT]} rotation={[0, 0, rotationZ]} {...dragHandlers}>
-      <planeGeometry args={[widthFt, heightFt]} />
-      {texture ? (
-        <meshBasicMaterial map={texture} toneMapped={false} side={THREE.DoubleSide} />
-      ) : (
-        <meshStandardMaterial color="#fafafa" side={THREE.DoubleSide} />
-      )}
-    </mesh>
+    <>
+      <mesh position={[x, y, Z_OFFSET_FT]} rotation={[0, 0, rotationZ]} {...dragHandlers}>
+        <planeGeometry args={[widthFt, heightFt]} />
+        {texture ? (
+          <meshBasicMaterial map={texture} toneMapped={false} side={THREE.DoubleSide} />
+        ) : (
+          <meshStandardMaterial color="#fafafa" side={THREE.DoubleSide} />
+        )}
+      </mesh>
+      {soldBadge}
+    </>
   )
 }

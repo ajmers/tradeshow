@@ -200,7 +200,7 @@ export function Booth3DDetailPage() {
   const floorPlacementsWithItems: FloorPlacementWithItem[] = boothFloorPlacements
     .map((placement) => {
       const item = itemsData.find((entry) => entry.id === placement.fields.Item?.[0])
-      return item ? { placement, item } : null
+      return item ? { placement, item, isSold: soldItemIds.has(item.id) } : null
     })
     .filter((entry): entry is FloorPlacementWithItem => entry !== null)
 
