@@ -44,7 +44,11 @@ export function PlacedItem3D({
   onDragActiveChange,
   onOpenDetail,
 }: PlacedItem3DProps) {
-  const { texture, materialRef: boxFrontMaterialRef } = useItemTexture3D(item)
+  const {
+    texture,
+    materialRef: boxFrontMaterialRef,
+    backMaterialRef: boxBackMaterialRef,
+  } = useItemTexture3D(item)
 
   const { width: widthInches, height: heightInches } = itemFootprintInches(item.fields)
   const widthFt = widthInches / INCHES_PER_FOOT
@@ -192,7 +196,9 @@ export function PlacedItem3D({
           <meshStandardMaterial attach="material-0" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
           <meshStandardMaterial attach="material-1" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
           <meshStandardMaterial attach="material-2" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
-          <meshStandardMaterial attach="material-3" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
+          {/* Bottom face: hidden rather than colored. For floor items this sits right
+              at floor level and z-fights with the floor plane if drawn at all. */}
+          <meshStandardMaterial attach="material-3" visible={false} />
           {/* Unlit, like the flat-plane case below — meshStandardMaterial would need
               scene lighting to render the photo at full brightness, making it look dim
               or washed-out depending on the light angle. Kept as a single material
@@ -207,8 +213,22 @@ export function PlacedItem3D({
             color={texture ? '#ffffff' : '#fafafa'}
             toneMapped={false}
             side={THREE.DoubleSide}
+            transparent
+            alphaTest={0.1}
           />
-          <meshStandardMaterial attach="material-5" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
+          {/* Reuses the front photo as an alphaMap (not map) so this face stays a
+              plain color but is cut out to match the photo's silhouette — otherwise a
+              transparent part of the photo just reveals this opaque face sitting
+              right behind it instead of letting you see through the item entirely. */}
+          <meshBasicMaterial
+            ref={boxBackMaterialRef}
+            attach="material-5"
+            color={BOX_SIDE_COLOR}
+            alphaMap={texture ?? undefined}
+            side={THREE.DoubleSide}
+            transparent
+            alphaTest={0.1}
+          />
         </mesh>
         {soldBadge}
       </>
@@ -220,7 +240,13 @@ export function PlacedItem3D({
       <mesh position={[x, y, Z_OFFSET_FT]} rotation={[0, 0, rotationZ]} {...dragHandlers}>
         <planeGeometry args={[widthFt, heightFt]} />
         {texture ? (
-          <meshBasicMaterial map={texture} toneMapped={false} side={THREE.DoubleSide} />
+          <meshBasicMaterial
+            map={texture}
+            toneMapped={false}
+            side={THREE.DoubleSide}
+            transparent
+            alphaTest={0.1}
+          />
         ) : (
           <meshStandardMaterial color="#fafafa" side={THREE.DoubleSide} />
         )}

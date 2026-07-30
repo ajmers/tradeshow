@@ -29,6 +29,7 @@ import {
 } from '@/features/walls/BoothScene3D'
 import { AvailableItemsTray } from '@/features/walls/AvailableItemsTray'
 import { ItemDetailDialog } from '@/features/walls/ItemDetailDialog'
+import { FloorAssignmentCanvas } from '@/features/walls/FloorAssignmentCanvas'
 import { findEmptySpot } from '@/features/walls/findEmptySpot'
 import { itemFloorFootprintInches, itemFootprintInches, wallDimensionToInches } from '@/features/walls/wallScale'
 import type { PlacedItem } from '@/features/walls/PlacedItem'
@@ -174,6 +175,8 @@ export function Booth3DDetailPage() {
   const [orbitEnabled, setOrbitEnabled] = useState(true)
   const [itemToPlaceOnFloor, setItemToPlaceOnFloor] = useState('')
   const [detailTarget, setDetailTarget] = useState<DetailTarget | null>(null)
+  const [viewMode, setViewMode] = useState<'3d' | 'floor2d'>('3d')
+  const [selected2DFloorPlacementId, setSelected2DFloorPlacementId] = useState<string | null>(null)
 
   const isPending =
     booths.isPending ||
@@ -362,11 +365,11 @@ export function Booth3DDetailPage() {
     })
   }
 
-  // Clicking the floor only does something while an item is "armed" for placement
-  // (picked from the tray below) — otherwise a plain floor click is just part of
-  // orbiting the camera.
-  function handleFloorClick(xFt: number, zFt: number) {
-    if (!itemToPlaceOnFloor || !widthFt || !depthFt) {
+  // Shared by both the 3D and 2D floor views — given the center point (in
+  // booth-relative inches) of a click, drops whichever item is armed for placement
+  // there. A plain click with nothing armed does nothing (just orbiting/panning).
+  function placeArmedItemAtCenter(centerXInches: number, centerZInches: number) {
+    if (!itemToPlaceOnFloor) {
       return
     }
     const item = itemsData.find((entry) => entry.id === itemToPlaceOnFloor)
@@ -374,9 +377,6 @@ export function Booth3DDetailPage() {
       return
     }
     const footprint = itemFloorFootprintInches(item.fields)
-    const centerXInches = (xFt + widthFt / 2) * 12
-    const centerZInches = (zFt + depthFt / 2) * 12
-
     createFloorPlacement.mutate({
       Placement: `${item.fields.Title ?? 'Item'} on floor`,
       Item: [item.id],
@@ -386,6 +386,20 @@ export function Booth3DDetailPage() {
       'Rotation Angle': 0,
     })
     setItemToPlaceOnFloor('')
+  }
+
+  function handleFloorClick(xFt: number, zFt: number) {
+    if (!widthFt || !depthFt) {
+      return
+    }
+    placeArmedItemAtCenter((xFt + widthFt / 2) * 12, (zFt + depthFt / 2) * 12)
+  }
+
+  // The 2D floor view's click coordinates are already booth-relative inches (from the
+  // floor rectangle's own top-left corner), so no feet-to-inches/booth-centering
+  // conversion is needed the way the 3D view's world coordinates require.
+  function handleFloor2DClick(xInches: number, yInches: number) {
+    placeArmedItemAtCenter(xInches, yInches)
   }
 
   function handleMoveFloorItem(placementId: string, xInches: number, yInches: number) {
@@ -400,6 +414,32 @@ export function Booth3DDetailPage() {
       id: placementId,
       input: { 'Rotation Angle': rotationDegrees },
     })
+  }
+
+  // The 2D canvas's Transformer reports position and rotation together in one
+  // gesture (unlike the 3D view's separate drag handle and rotate handle), so this
+  // saves both fields in a single mutation.
+  function handleFloor2DTransformEnd(
+    placementId: string,
+    xInches: number,
+    yInches: number,
+    rotationDegrees: number,
+  ) {
+    updateFloorPlacement.mutate({
+      id: placementId,
+      input: { 'X Position': xInches, 'Y Position': yInches, 'Rotation Angle': rotationDegrees },
+    })
+  }
+
+  // Same two-step pattern as the 2D wall canvas: a first click just selects the item
+  // (so the rotate handle shows up and is actually usable); clicking the
+  // already-selected item again opens details.
+  function handleFloor2DSelect(placementId: string | null) {
+    if (placementId && placementId === selected2DFloorPlacementId) {
+      setDetailTarget({ kind: 'floor', placementId })
+    } else {
+      setSelected2DFloorPlacementId(placementId)
+    }
   }
 
   // Items already placed anywhere in the booth (walls or floor), flattened, so the
@@ -450,71 +490,98 @@ export function Booth3DDetailPage() {
             >
               Reset booth
             </button>
+            <button
+              type="button"
+              onClick={() => setViewMode((current) => (current === '3d' ? 'floor2d' : '3d'))}
+              title="The 2D floor view makes it easier to position and rotate floor items without the 3D perspective getting in the way."
+            >
+              {viewMode === '3d' ? 'Floor view (2D)' : '3D view'}
+            </button>
           </div>
 
           <div className="booth-3d-layout">
             <div className="booth-3d-canvas-wrapper">
-              <Canvas camera={{ position: [widthFt! * 0.9, heightFt! * 1.1, depthFt! * 1.4], fov: 50 }}>
-                <BoothScene3D
+              {viewMode === '3d' ? (
+                <Canvas camera={{ position: [widthFt! * 0.9, heightFt! * 1.1, depthFt! * 1.4], fov: 50 }}>
+                  <BoothScene3D
+                    widthFt={widthFt!}
+                    depthFt={depthFt!}
+                    heightFt={heightFt!}
+                    surfaces={surfaces}
+                    selectedSurface={selectedSurface}
+                    onSelectSurface={setSelectedSurface}
+                    onMoveItem={handleMoveItem}
+                    onDragActiveChange={(active) => setOrbitEnabled(!active)}
+                    onOpenDetailItem={(assignmentId) => setDetailTarget({ kind: 'wall', assignmentId })}
+                    floorPlacements={floorPlacementsWithItems}
+                    onMoveFloorItem={handleMoveFloorItem}
+                    onRotateFloorItem={handleRotateFloorItem}
+                    onOpenFloorDetailItem={(placementId) => setDetailTarget({ kind: 'floor', placementId })}
+                    onFloorClick={handleFloorClick}
+                  />
+                  <OrbitControls target={[0, heightFt! / 2, 0]} enabled={orbitEnabled} />
+                </Canvas>
+              ) : (
+                <FloorAssignmentCanvas
                   widthFt={widthFt!}
                   depthFt={depthFt!}
-                  heightFt={heightFt!}
                   surfaces={surfaces}
-                  selectedSurface={selectedSurface}
-                  onSelectSurface={setSelectedSurface}
-                  onMoveItem={handleMoveItem}
-                  onDragActiveChange={(active) => setOrbitEnabled(!active)}
-                  onOpenDetailItem={(assignmentId) => setDetailTarget({ kind: 'wall', assignmentId })}
                   floorPlacements={floorPlacementsWithItems}
-                  onMoveFloorItem={handleMoveFloorItem}
-                  onRotateFloorItem={handleRotateFloorItem}
-                  onOpenFloorDetailItem={(placementId) => setDetailTarget({ kind: 'floor', placementId })}
-                  onFloorClick={handleFloorClick}
+                  selectedPlacementId={selected2DFloorPlacementId}
+                  onSelect={handleFloor2DSelect}
+                  onMove={handleMoveFloorItem}
+                  onTransformEnd={handleFloor2DTransformEnd}
+                  onFloorClick={handleFloor2DClick}
                 />
-                <OrbitControls target={[0, heightFt! / 2, 0]} enabled={orbitEnabled} />
-              </Canvas>
+              )}
             </div>
 
             <aside className="booth-3d-panel">
-              {!selectedSurface ? (
-                <p>Click a wall of the booth to assign or clear it.</p>
-              ) : (
+              {viewMode === '3d' && (
                 <>
-                  <h3>{selectedSurface} wall</h3>
-                  {boothWalls.length === 0 ? (
-                    <p>This booth has no walls yet. Add one from the Booth Planner first.</p>
+                  {!selectedSurface ? (
+                    <p>Click a wall of the booth to assign or clear it.</p>
                   ) : (
-                    <label>
-                      Assigned wall
-                      <select
-                        value={selectedOccupant?.wall.id ?? ''}
-                        onChange={(event) => handleAssignWall(selectedSurface, event.target.value)}
-                      >
-                        <option value="">— Open (no wall) —</option>
-                        {assignableWalls.map((wall) => (
-                          <option key={wall.id} value={wall.id}>
-                            {wall.fields['Wall Name'] ?? 'Untitled wall'}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  )}
-                  {selectedOccupant && (
                     <>
-                      <p className="booth-3d-panel__hint">
-                        Drag items to reposition them, or click one to sell or remove it. Click an
-                        item below to add it.
-                      </p>
-                      <AvailableItemsTray items={availableItems} onSelect={handleAddItemToSelectedWall} />
+                      <h3>{selectedSurface} wall</h3>
+                      {boothWalls.length === 0 ? (
+                        <p>This booth has no walls yet. Add one from the Booth Planner first.</p>
+                      ) : (
+                        <label>
+                          Assigned wall
+                          <select
+                            value={selectedOccupant?.wall.id ?? ''}
+                            onChange={(event) => handleAssignWall(selectedSurface, event.target.value)}
+                          >
+                            <option value="">— Open (no wall) —</option>
+                            {assignableWalls.map((wall) => (
+                              <option key={wall.id} value={wall.id}>
+                                {wall.fields['Wall Name'] ?? 'Untitled wall'}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      )}
+                      {selectedOccupant && (
+                        <>
+                          <p className="booth-3d-panel__hint">
+                            Drag items to reposition them, or click one to sell or remove it.
+                            Click an item below to add it.
+                          </p>
+                          <AvailableItemsTray
+                            items={availableItems}
+                            onSelect={handleAddItemToSelectedWall}
+                          />
+                        </>
+                      )}
+                      <button type="button" onClick={() => setSelectedSurface(null)}>
+                        Done
+                      </button>
                     </>
                   )}
-                  <button type="button" onClick={() => setSelectedSurface(null)}>
-                    Done
-                  </button>
+                  <hr />
                 </>
               )}
-
-              <hr />
 
               <h3>Floor</h3>
               {itemToPlaceOnFloor ? (
@@ -530,9 +597,9 @@ export function Booth3DDetailPage() {
               ) : (
                 <>
                   <p className="booth-3d-panel__hint">
-                    Click an item, then click the floor to place it freestanding. Drag placed
-                    items to reposition them, or click one to sell or remove it. Drag the small
-                    dot in front of an item to rotate it — it snaps to 90° angles.
+                    {viewMode === '3d'
+                      ? 'Click an item, then click the floor to place it freestanding. Drag placed items to reposition them, or click one to sell or remove it. Drag the small dot in front of an item to rotate it — it snaps to 90° angles.'
+                      : 'Click an item, then click the floor to place it freestanding. Drag placed items to reposition them. Click an item to select it (rotate with the handle above it), then click again to sell or remove it.'}
                   </p>
                   <AvailableItemsTray items={availableItems} onSelect={setItemToPlaceOnFloor} />
                 </>
@@ -558,7 +625,10 @@ export function Booth3DDetailPage() {
           boothId={boothRecordId}
           removeLabel="Remove from floor"
           onRemove={() => deleteFloorPlacement.mutateAsync(detailFloorItem.placement.id)}
-          onClose={() => setDetailTarget(null)}
+          onClose={() => {
+            setDetailTarget(null)
+            setSelected2DFloorPlacementId(null)
+          }}
         />
       )}
     </main>

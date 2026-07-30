@@ -47,7 +47,7 @@ export function FloorPlacedItem3D({
   onDragActiveChange,
   onOpenDetail,
 }: FloorPlacedItem3DProps) {
-  const { texture, materialRef } = useItemTexture3D(item)
+  const { texture, materialRef, backMaterialRef } = useItemTexture3D(item)
 
   const {
     width: widthInches,
@@ -220,7 +220,9 @@ export function FloorPlacedItem3D({
         <meshStandardMaterial attach="material-0" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
         <meshStandardMaterial attach="material-1" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
         <meshStandardMaterial attach="material-2" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
-        <meshStandardMaterial attach="material-3" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
+        {/* Bottom face: hidden rather than colored — it sits right at floor level and
+            z-fights with the floor plane if drawn at all. */}
+        <meshStandardMaterial attach="material-3" visible={false} />
         {/* Unlit so the photo shows at full brightness regardless of scene lighting —
             see useItemTexture3D for why this material stays a single persistent
             instance rather than swapping types when the texture loads. */}
@@ -231,8 +233,22 @@ export function FloorPlacedItem3D({
           color={texture ? '#ffffff' : '#fafafa'}
           toneMapped={false}
           side={THREE.DoubleSide}
+          transparent
+          alphaTest={0.1}
         />
-        <meshStandardMaterial attach="material-5" color={BOX_SIDE_COLOR} side={THREE.DoubleSide} />
+        {/* Reuses the front photo as an alphaMap (not map) so this face stays a plain
+            color but is cut out to match the photo's silhouette — otherwise a
+            transparent part of the photo just reveals this opaque face sitting right
+            behind it instead of letting you see through the item entirely. */}
+        <meshBasicMaterial
+          ref={backMaterialRef}
+          attach="material-5"
+          color={BOX_SIDE_COLOR}
+          alphaMap={texture ?? undefined}
+          side={THREE.DoubleSide}
+          transparent
+          alphaTest={0.1}
+        />
       </mesh>
       {isSold && (
         <SoldBadge3D
