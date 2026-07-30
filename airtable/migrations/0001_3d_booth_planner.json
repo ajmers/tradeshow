@@ -1,0 +1,30 @@
+{
+  "description": "Booth footprint/height, wall-to-surface assignment, and freestanding floor placements for the 3D Booth Planner.",
+  "fields": [
+    { "table": "Booths", "name": "Booth Width", "type": "number", "options": { "precision": 1 } },
+    { "table": "Booths", "name": "Booth Depth", "type": "number", "options": { "precision": 1 } },
+    { "table": "Booths", "name": "Booth Height", "type": "number", "options": { "precision": 1 } },
+    {
+      "table": "Walls",
+      "name": "Booth Surface",
+      "type": "singleSelect",
+      "options": {
+        "choices": [{ "name": "Front" }, { "name": "Back" }, { "name": "Left" }, { "name": "Right" }]
+      }
+    }
+  ],
+  "tables": [
+    {
+      "name": "Floor Placements",
+      "description": "Items placed freestanding on a booth floor in the 3D layout, not attached to any wall.",
+      "fields": [
+        { "name": "Placement", "type": "singleLineText" },
+        { "name": "Item", "type": "multipleRecordLinks", "linkedTable": "Items" },
+        { "name": "Booth", "type": "multipleRecordLinks", "linkedTable": "Booths" },
+        { "name": "X Position", "type": "number", "options": { "precision": 1 } },
+        { "name": "Y Position", "type": "number", "options": { "precision": 1 } },
+        { "name": "Rotation Angle", "type": "number", "options": { "precision": 1 } }
+      ]
+    }
+  ]
+}
