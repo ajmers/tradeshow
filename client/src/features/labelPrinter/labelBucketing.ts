@@ -28,8 +28,8 @@ function wordCount(item: Item, fields: LabelField[]): number {
 // Fixed word-count cutoffs rather than ranking items into thirds — a rank-based
 // split would put items in the "large" bucket just because there weren't enough
 // longer items to fill it, even if those items had little or no text at all.
-const SMALL_MAX_WORDS = 50
-const MEDIUM_MAX_WORDS = 90
+const SMALL_MAX_WORDS = 25
+const MEDIUM_MAX_WORDS = 65
 
 function classify(words: number): LabelSizeBucket {
   if (words <= SMALL_MAX_WORDS) {

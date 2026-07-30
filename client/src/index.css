@@ -1425,6 +1425,7 @@ dialog.item-detail-dialog::backdrop {
   border-radius: 0.375rem;
   padding: 1.25rem;
   break-inside: avoid;
+  overflow: hidden;
 }
 
 .label-sheet__label--with-logo {
