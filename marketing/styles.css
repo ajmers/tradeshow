@@ -1,0 +1,461 @@
+@import url('https://fonts.googleapis.com/css2?family=Libertinus+Serif:ital,wght@0,400;0,600;1,400&family=Source+Sans+3:wght@400;500;600;700&display=swap');
+
+:root {
+  --cream: #fdf9f5;
+  --cream-deep: #f6efe6;
+  --ink: #211f1a;
+  --ink-soft: #55524a;
+  --gold: #96702f;
+  --gold-bright: #b3843d;
+  --olive: #3f4a24;
+  --olive-soft: #5a6438;
+  --border: #e4d9c8;
+  --shadow: 0 20px 60px -30px rgba(63, 74, 36, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: var(--ink);
+  background: var(--cream);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: 'Libertinus Serif', Georgia, serif;
+  font-weight: 600;
+  line-height: 1.15;
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+.wrap {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* ---------- Header ---------- */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(253, 249, 245, 0.9);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+}
+
+.site-header .wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 0.9rem;
+  padding-bottom: 0.9rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.brand img {
+  height: 2.25rem;
+  width: auto;
+  display: block;
+}
+
+.brand span {
+  font-family: 'Libertinus Serif', Georgia, serif;
+  font-weight: 600;
+  font-size: 1.35rem;
+  letter-spacing: 0.01em;
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+}
+
+.site-nav a:not(.button) {
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.site-nav a:not(.button):hover {
+  color: var(--ink);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+}
+
+/* ---------- Buttons ---------- */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.4rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+.button-primary {
+  background: var(--olive);
+  color: var(--cream);
+}
+
+.button-primary:hover {
+  background: var(--olive-soft);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px -12px rgba(63, 74, 36, 0.55);
+}
+
+.button-ghost {
+  border-color: var(--border);
+  color: var(--ink);
+  background: transparent;
+}
+
+.button-ghost:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+/* ---------- Hero ---------- */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 5.5rem 0 6rem;
+}
+
+/* The grid pattern fades out toward the bottom of the hero — isolated to this
+   pseudo-element (not the section itself) so the fade never touches the actual
+   headline/buttons, which must stay fully opaque. */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(150, 112, 47, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(150, 112, 47, 0.07) 1px, transparent 1px);
+  background-size: 44px 44px;
+  background-position: center top;
+  -webkit-mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+}
+
+.hero-inner {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.eyebrow {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 1.5rem;
+}
+
+.hero h1 {
+  font-size: clamp(2.6rem, 5.5vw, 4rem);
+  color: var(--ink);
+}
+
+.hero h1 em {
+  font-style: italic;
+  color: var(--gold);
+}
+
+.hero-sub {
+  margin: 1.75rem auto 0;
+  max-width: 560px;
+  font-size: 1.15rem;
+  color: var(--ink-soft);
+}
+
+.hero-actions {
+  margin-top: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.hero-note {
+  margin-top: 1.25rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+/* ---------- Sections ---------- */
+
+section {
+  padding: 5rem 0;
+}
+
+.section-head {
+  max-width: 620px;
+  margin: 0 auto 3rem;
+  text-align: center;
+}
+
+.section-eyebrow {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--olive-soft);
+  margin-bottom: 0.75rem;
+}
+
+.section-head h2 {
+  font-size: clamp(1.9rem, 3.5vw, 2.5rem);
+}
+
+.section-head p {
+  margin-top: 1rem;
+  color: var(--ink-soft);
+  font-size: 1.05rem;
+}
+
+/* ---------- Feature grid ---------- */
+
+.features {
+  background: var(--cream-deep);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.75rem;
+}
+
+.feature-card {
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1.75rem;
+  box-shadow: var(--shadow);
+}
+
+.feature-icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--olive);
+  color: var(--cream);
+  margin-bottom: 1.1rem;
+}
+
+.feature-icon svg {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.feature-card h3 {
+  font-size: 1.15rem;
+  margin-bottom: 0.55rem;
+}
+
+.feature-card p {
+  color: var(--ink-soft);
+  font-size: 0.96rem;
+}
+
+/* ---------- How it works ---------- */
+
+.steps {
+  counter-reset: step;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 2.5rem;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.step {
+  text-align: center;
+  padding: 0 0.5rem;
+}
+
+.step-number {
+  counter-increment: step;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: 0 auto 1.1rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--gold);
+  color: var(--gold);
+  font-family: 'Libertinus Serif', Georgia, serif;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-number::before {
+  content: counter(step);
+}
+
+.step h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.step p {
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+
+/* ---------- CTA ---------- */
+
+.cta {
+  text-align: center;
+  background: var(--olive);
+  color: var(--cream);
+  border-radius: 1rem;
+  padding: 3.5rem 2rem;
+  margin: 0 1.5rem;
+}
+
+.cta h2 {
+  color: var(--cream);
+  font-size: clamp(1.8rem, 3vw, 2.3rem);
+}
+
+.cta p {
+  margin-top: 0.9rem;
+  color: rgba(253, 249, 245, 0.8);
+  font-size: 1.05rem;
+}
+
+.cta .hero-actions {
+  margin-top: 2rem;
+}
+
+.cta .button-ghost {
+  border-color: rgba(253, 249, 245, 0.4);
+  color: var(--cream);
+}
+
+.cta .button-ghost:hover {
+  border-color: var(--cream);
+  color: var(--cream);
+}
+
+.cta .button-primary {
+  background: var(--gold);
+}
+
+.cta .button-primary:hover {
+  background: var(--gold-bright);
+}
+
+/* ---------- Footer ---------- */
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  padding: 2.5rem 0;
+}
+
+.site-footer .wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.footer-brand img {
+  height: 1.6rem;
+  width: auto;
+}
+
+.footer-brand span {
+  font-family: 'Libertinus Serif', Georgia, serif;
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.footer-meta {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 640px) {
+  .nav-links {
+    display: none;
+  }
+
+  .hero {
+    padding: 3.5rem 0 4rem;
+  }
+
+  section {
+    padding: 3.5rem 0;
+  }
+
+  .cta {
+    margin: 0 1rem;
+    padding: 2.75rem 1.5rem;
+  }
+}
