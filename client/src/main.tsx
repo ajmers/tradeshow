@@ -5,7 +5,10 @@ import { RouterProvider } from 'react-router-dom'
 import { router } from '@/routes'
 import { AuthProvider } from '@/features/auth/AuthProvider'
 import { AuthGate } from '@/features/auth/AuthGate'
+import { installStaleChunkRecovery } from '@/lib/staleChunkRecovery'
 import '@/index.css'
+
+installStaleChunkRecovery()
 
 const queryClient = new QueryClient()
 
