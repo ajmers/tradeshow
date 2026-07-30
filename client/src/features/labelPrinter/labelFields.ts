@@ -39,7 +39,11 @@ export interface LabelField {
 }
 
 export const LABEL_FIELDS: LabelField[] = [
-  { key: 'Title', label: 'Title', getValue: (item) => item.fields.Title },
+  {
+    key: 'Title',
+    label: 'Title',
+    getValue: (item) => item.fields['Label Title'] || item.fields.Title,
+  },
   { key: 'Label', label: 'Label', getValue: (item) => item.fields.Label, richText: true },
   { key: 'Artist', label: 'Artist', getValue: (item) => item.fields.Artist },
   { key: 'Dimensions', label: 'Dimensions', getValue: formatDimensions },

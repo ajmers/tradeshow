@@ -20,6 +20,7 @@ export const itemFieldsSchema = z.object({
   'List Price': z.number().optional(),
   Discount: z.number().optional(),
   Label: z.string().optional(),
+  'Label Title': z.string().optional(),
 })
 
 export const itemSchema = z.object({

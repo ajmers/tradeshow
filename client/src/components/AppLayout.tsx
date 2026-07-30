@@ -7,6 +7,7 @@ import { SignOutButton } from '@/features/auth/SignOutButton'
 const navItems = [
   { to: '/', label: 'Inventory', end: true },
   { to: '/booth-planner', label: 'Booth Planner', end: false },
+  { to: '/booth-planner-3d', label: 'Booth Planner 3D', end: false },
   { to: '/label-printer', label: 'Label Printer', end: false },
 ]
 

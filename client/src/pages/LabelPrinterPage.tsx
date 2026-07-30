@@ -120,44 +120,83 @@ export function LabelPrinterPage() {
       <div className="label-printer-controls">
         <div className="page-toolbar">
           <h1>Label Printer</h1>
-          <button type="button" onClick={() => window.print()} disabled={selectedItems.length === 0}>
-            Print
-          </button>
         </div>
+        <button
+          type="button"
+          className="label-printer-print-button"
+          onClick={() => window.print()}
+          disabled={selectedItems.length === 0}
+        >
+          Print
+        </button>
 
         <LabelPrinterConfigPanel config={config} onChange={setConfig} />
 
-        <div className="label-printer-location-filter">
-          <label>
-            Booth
-            <select
-              value={boothFilter}
-              onChange={(event) => handleBoothFilterChange(event.target.value)}
-            >
-              <option value="">All booths</option>
-              {boothsData.map((booth) => (
-                <option key={booth.id} value={booth.id}>
-                  {booth.fields['Booth Name'] ?? 'Untitled booth'}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Wall
-            <select
-              value={wallFilter}
-              onChange={(event) => handleWallFilterChange(event.target.value)}
-              disabled={!boothFilter}
-            >
-              <option value="">{boothFilter ? 'All walls in this booth' : 'All walls'}</option>
-              {wallsInSelectedBooth.map((wall) => (
-                <option key={wall.id} value={wall.id}>
-                  {wall.fields['Wall Name'] ?? 'Untitled wall'}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+        <fieldset className="label-printer-filters">
+          <legend>Filters</legend>
+          <div className="label-printer-filters__row">
+            <label>
+              Booth
+              <select
+                value={boothFilter}
+                onChange={(event) => handleBoothFilterChange(event.target.value)}
+              >
+                <option value="">— Select a booth —</option>
+                {boothsData.map((booth) => (
+                  <option key={booth.id} value={booth.id}>
+                    {booth.fields['Booth Name'] ?? 'Untitled booth'}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Wall
+              <select
+                value={wallFilter}
+                onChange={(event) => handleWallFilterChange(event.target.value)}
+                disabled={!boothFilter}
+              >
+                <option value="">All walls in this booth</option>
+                {wallsInSelectedBooth.map((wall) => (
+                  <option key={wall.id} value={wall.id}>
+                    {wall.fields['Wall Name'] ?? 'Untitled wall'}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="label-printer-filters__pills">
+            {!boothFilter && (
+              <span className="label-printer-pill label-printer-pill--muted">All Inventory</span>
+            )}
+            {boothFilter && (
+              <span className="label-printer-pill">
+                {boothsData.find((booth) => booth.id === boothFilter)?.fields['Booth Name'] ??
+                  'Untitled booth'}
+                <button
+                  type="button"
+                  onClick={() => handleBoothFilterChange('')}
+                  aria-label="Clear booth filter"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {wallFilter && (
+              <span className="label-printer-pill">
+                {wallsInSelectedBooth.find((wall) => wall.id === wallFilter)?.fields['Wall Name'] ??
+                  'Untitled wall'}
+                <button
+                  type="button"
+                  onClick={() => handleWallFilterChange('')}
+                  aria-label="Clear wall filter"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+          </div>
+        </fieldset>
 
         <ItemSelectionList items={filteredItems} selectedIds={selectedIds} onChange={setSelectedIds} />
 

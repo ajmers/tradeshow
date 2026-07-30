@@ -76,15 +76,17 @@ export function LabelPrinterConfigPanel({ config, onChange }: LabelPrinterConfig
           />
           Show logo on labels
         </label>
-        <label className="label-printer-config__row">
-          Logo image
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleLogoChange}
-            disabled={updateLogo.isPending}
-          />
-        </label>
+        {!logo.data && (
+          <label className="label-printer-config__row">
+            Logo image
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleLogoChange}
+              disabled={updateLogo.isPending}
+            />
+          </label>
+        )}
         {logo.isPending && <p>Loading logo…</p>}
         {logo.error && <p role="alert">Error: {logo.error.message}</p>}
         {logo.data && (
@@ -92,10 +94,13 @@ export function LabelPrinterConfigPanel({ config, onChange }: LabelPrinterConfig
             <img src={logo.data} alt="Logo preview" />
             <button
               type="button"
+              className="label-printer-config__logo-remove"
               onClick={() => updateLogo.mutate(null)}
               disabled={updateLogo.isPending}
+              aria-label="Remove logo"
+              title="Remove logo"
             >
-              Remove logo
+              ×
             </button>
           </div>
         )}

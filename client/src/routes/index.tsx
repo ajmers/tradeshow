@@ -21,6 +21,14 @@ export const router = createBrowserRouter([
         lazy: () => import('@/pages/WallDetailPage').then((m) => ({ Component: m.WallDetailPage })),
       },
       {
+        path: 'booth-planner-3d',
+        lazy: () => import('@/pages/Booth3DPlannerPage').then((m) => ({ Component: m.Booth3DPlannerPage })),
+      },
+      {
+        path: 'booth-planner-3d/:boothId',
+        lazy: () => import('@/pages/Booth3DDetailPage').then((m) => ({ Component: m.Booth3DDetailPage })),
+      },
+      {
         path: 'admin',
         lazy: () => import('@/pages/AdminPage').then((m) => ({ Component: m.AdminPage })),
       },

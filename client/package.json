@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
     "@supabase/supabase-js": "^2.111.0",
     "@tanstack/react-query": "^5.101.4",
     "konva": "^10.3.0",
@@ -20,12 +22,14 @@
     "react-router-dom": "^7.18.1",
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
+    "three": "^0.185.1",
     "use-image": "^1.1.4",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@types/three": "^0.185.1",
     "@vitejs/plugin-react": "^6.0.4",
     "typescript": "^6.0.3",
     "vite": "^8.1.5"
