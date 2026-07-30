@@ -50,8 +50,13 @@ export function LabelSheet({ items, fieldKeys, showLogo, logoDataUrl }: LabelShe
                 key={pageIndex}
                 className="label-sheet__page"
                 style={{
-                  gridTemplateColumns: `repeat(${layout.columns}, 1fr)`,
-                  gridTemplateRows: `repeat(${layout.rows}, 1fr)`,
+                  // minmax(0, 1fr) rather than a bare 1fr — a bare 1fr track's automatic
+                  // minimum size is its content's min-content size, so an oversized label
+                  // grows its row (and the whole fixed-height page) instead of being
+                  // constrained to its share of the page, which pushed pages taller than
+                  // one printed sheet and made the next page overlap it.
+                  gridTemplateColumns: `repeat(${layout.columns}, minmax(0, 1fr))`,
+                  gridTemplateRows: `repeat(${layout.rows}, minmax(0, 1fr))`,
                 }}
               >
                 {pageItems.map((item) => (
