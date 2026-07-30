@@ -5,6 +5,7 @@ import { useBooths } from '@/hooks/useBooths'
 import { useWalls } from '@/hooks/useWalls'
 import { useWallAssignments } from '@/hooks/useWallAssignments'
 import { useLabelLogo } from '@/hooks/useLabelLogo'
+import { useBaseInfo } from '@/hooks/useBaseInfo'
 import { LabelPrinterConfigPanel } from '@/features/labelPrinter/LabelPrinterConfigPanel'
 import { ItemSelectionList } from '@/features/labelPrinter/ItemSelectionList'
 import { LabelSheet } from '@/features/labelPrinter/LabelSheet'
@@ -20,12 +21,17 @@ export function LabelPrinterPage() {
   const walls = useWalls()
   const wallAssignments = useWallAssignments()
   const logo = useLabelLogo()
+  const baseInfo = useBaseInfo()
   const [searchParams] = useSearchParams()
   const [config, setConfig] = useState<LabelPrinterConfig>(() => loadLabelPrinterConfig())
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [boothFilter, setBoothFilter] = useState(() => searchParams.get('boothId') ?? '')
   const [wallFilter, setWallFilter] = useState('')
   const hasInitializedSelection = useRef(false)
+  // Defaults to enabled while base info is still loading, so the page doesn't flash
+  // to "not available" and back once it resolves (it's normally already cached from
+  // AppLayout, whose nav link is the usual way in here).
+  const labelPrinterEnabled = baseInfo.data?.featureFlags.labelPrinter ?? true
 
   useEffect(() => {
     saveLabelPrinterConfig(config)
@@ -64,6 +70,10 @@ export function LabelPrinterPage() {
 
   if (firstError) {
     return <p role="alert">Error: {firstError.message}</p>
+  }
+
+  if (!labelPrinterEnabled) {
+    return <p>Label Printer isn&rsquo;t enabled for your account.</p>
   }
 
   const itemsData = items.data ?? []

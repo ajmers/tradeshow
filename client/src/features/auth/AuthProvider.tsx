@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
+import { queryClient } from '@/lib/queryClient'
 import { AuthContext } from '@/features/auth/AuthContext'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -21,6 +22,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: listener } = supabase.auth.onAuthStateChange((event, newSession) => {
       if (event === 'PASSWORD_RECOVERY') {
         setPasswordRecovery(true)
+      }
+      if (event === 'SIGNED_OUT') {
+        // Wipe every cached query (items, booths, walls, admin data, ...) so signing
+        // in as a different user on the same browser session never shows a flash of
+        // the previous user's data before fresh queries resolve.
+        queryClient.clear()
       }
       setSession(newSession)
     })

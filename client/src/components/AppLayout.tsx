@@ -41,6 +41,10 @@ export function AppLayout() {
   const { data: labelLogo } = useLabelLogo()
   const lastBoothId = useLastBoothId()
 
+  // Defaults to enabled while base info is still loading, so the link doesn't flash
+  // away and back once it resolves (it's normally already cached before this renders).
+  const labelPrinterEnabled = baseInfo?.featureFlags.labelPrinter ?? true
+
   const navItems = [
     { to: '/', label: 'Inventory', end: true },
     {
@@ -48,7 +52,7 @@ export function AppLayout() {
       label: 'Booth Planner',
       end: false,
     },
-    { to: '/label-printer', label: 'Label Printer', end: false },
+    ...(labelPrinterEnabled ? [{ to: '/label-printer', label: 'Label Printer', end: false }] : []),
   ]
 
   return (
