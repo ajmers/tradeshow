@@ -409,6 +409,84 @@ section {
   background: var(--gold-bright);
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- Rotating word (CTA heading) ---------- */
+
+.word-rotate {
+  display: inline-block;
+}
+
+.word-rotate__list {
+  display: inline-block;
+}
+
+.word-rotate__word {
+  display: none;
+  opacity: 0;
+  color: var(--gold-bright);
+  animation: word-rotate-fade 12s infinite;
+}
+
+.word-rotate__word:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.word-rotate__word:nth-child(2) {
+  animation-delay: 3s;
+}
+
+.word-rotate__word:nth-child(3) {
+  animation-delay: 6s;
+}
+
+.word-rotate__word:nth-child(4) {
+  animation-delay: 9s;
+}
+
+@keyframes word-rotate-fade {
+  0% {
+    opacity: 0;
+    display: inline-block;
+  }
+  4% {
+    opacity: 1;
+  }
+  18% {
+    opacity: 1;
+  }
+  22% {
+    opacity: 0;
+  }
+  22.01% {
+    display: none;
+  }
+  100% {
+    opacity: 0;
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word-rotate__word {
+    animation: none;
+    display: none;
+  }
+  .word-rotate__word:nth-child(1) {
+    display: inline-block;
+  }
+}
+
 /* ---------- Footer ---------- */
 
 .site-footer {
