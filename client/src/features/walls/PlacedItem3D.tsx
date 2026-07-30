@@ -22,7 +22,7 @@ interface PlacedItem3DProps {
   /** Only the selected wall's items are draggable, so items on other surfaces don't
    *  intercept clicks meant for orbiting the camera. */
   interactive?: boolean
-  onMove?: (assignmentId: string, xInches: number, yInches: number) => void
+  onMove?: (assignmentId: string, xInches: number, yInches: number) => Promise<unknown> | void
   onDragActiveChange?: (active: boolean) => void
   /** A pointer down+up with no meaningful movement in between is a click, not a drag. */
   onOpenDetail?: () => void
@@ -122,7 +122,7 @@ export function PlacedItem3D({
     })
   }
 
-  function handlePointerUp(event: ThreeEvent<PointerEvent>) {
+  async function handlePointerUp(event: ThreeEvent<PointerEvent>) {
     if (!dragStateRef.current) {
       return
     }
@@ -131,11 +131,21 @@ export function PlacedItem3D({
     dragStateRef.current = null
     onDragActiveChange?.(false)
     if (didDragRef.current && dragPosition) {
-      onMove?.(assignment.id, dragPosition.xInches, dragPosition.yInches)
-    } else if (!didDragRef.current) {
-      onOpenDetail?.()
+      // Keep showing the dragged-to position until the mutation (and the query
+      // invalidation it triggers) actually lands — clearing it right away would
+      // briefly fall back to the stale pre-drag position and then jump again once
+      // the refetch completes a moment later.
+      try {
+        await onMove?.(assignment.id, dragPosition.xInches, dragPosition.yInches)
+      } finally {
+        setDragPosition(null)
+      }
+    } else {
+      if (!didDragRef.current) {
+        onOpenDetail?.()
+      }
+      setDragPosition(null)
     }
-    setDragPosition(null)
   }
 
   const dragHandlers = interactive

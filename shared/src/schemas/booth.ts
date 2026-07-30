@@ -11,9 +11,11 @@ export const boothFieldsSchema = z.object({
   Walls: z.array(z.string()).optional(),
   'Wall Assignments': z.array(z.string()).optional(),
   Sales: z.array(z.string()).optional(),
-  'Booth Width': z.number().optional(),
-  'Booth Depth': z.number().optional(),
-  'Booth Height': z.number().optional(),
+  // Nullable (not just optional) so "Reset booth" can explicitly clear them —
+  // Airtable requires an explicit `null` PATCH to unset a number field.
+  'Booth Width': z.number().nullable().optional(),
+  'Booth Depth': z.number().nullable().optional(),
+  'Booth Height': z.number().nullable().optional(),
 })
 
 export const boothSchema = z.object({

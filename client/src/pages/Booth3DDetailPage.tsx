@@ -161,6 +161,7 @@ export function Booth3DDetailPage() {
   const wallAssignments = useWallAssignments()
   const sales = useSales()
   const floorPlacements = useFloorPlacements()
+  const updateBooth = useUpdateBooth()
   const updateWall = useUpdateWall()
   const createAssignment = useCreateWallAssignment()
   const updateAssignment = useUpdateWallAssignment()
@@ -266,6 +267,20 @@ export function Booth3DDetailPage() {
     }
   }
 
+  // Clears the booth's dimensions and which surface each wall occupies, so the box
+  // and wall-to-surface assignment can be redone from scratch. Items already placed
+  // on those walls are untouched — only the surface/dimension bookkeeping resets.
+  async function handleResetBooth() {
+    setSelectedSurface(null)
+    await Promise.all([
+      updateBooth.mutateAsync({
+        id: boothRecordId,
+        input: { 'Booth Width': null, 'Booth Depth': null, 'Booth Height': null },
+      }),
+      ...boothWalls.map((wall) => updateWall.mutateAsync({ id: wall.id, input: { 'Booth Surface': null } })),
+    ])
+  }
+
   const boothFloorPlacements = floorPlacementsData.filter(
     (placement) => placement.fields.Booth?.[0] === boothRecordId,
   )
@@ -338,7 +353,10 @@ export function Booth3DDetailPage() {
   }
 
   function handleMoveItem(assignmentId: string, xInches: number, yInches: number) {
-    updateAssignment.mutate({
+    // Returned (not fire-and-forget) so the dragged item's 3D mesh can keep showing
+    // its optimistic position until this — including the query refetch it triggers —
+    // actually finishes, instead of snapping back and then jumping again.
+    return updateAssignment.mutateAsync({
       id: assignmentId,
       input: { 'X Position': xInches, 'Y Position': yInches },
     })
@@ -371,9 +389,16 @@ export function Booth3DDetailPage() {
   }
 
   function handleMoveFloorItem(placementId: string, xInches: number, yInches: number) {
-    updateFloorPlacement.mutate({
+    return updateFloorPlacement.mutateAsync({
       id: placementId,
       input: { 'X Position': xInches, 'Y Position': yInches },
+    })
+  }
+
+  function handleRotateFloorItem(placementId: string, rotationDegrees: number) {
+    return updateFloorPlacement.mutateAsync({
+      id: placementId,
+      input: { 'Rotation Angle': rotationDegrees },
     })
   }
 
@@ -407,10 +432,23 @@ export function Booth3DDetailPage() {
         <>
           <div className="booth-3d-toolbar">
             <span>
-              {widthFt}&apos; × {depthFt}&apos; × {heightFt}&apos; high
+              w: {widthFt}&apos; × d: {depthFt}&apos; × h: {heightFt}&apos;
             </span>
-            <button type="button" onClick={() => setEditingDimensions(true)}>
-              Edit dimensions
+            <button
+              type="button"
+              className="wall-editor-dimensions__edit-button"
+              onClick={() => setEditingDimensions(true)}
+              aria-label="Edit dimensions"
+              title="Edit dimensions"
+            >
+              ✎
+            </button>
+            <button
+              type="button"
+              onClick={handleResetBooth}
+              title="Clears the booth's dimensions and which wall is on which surface, so you can redo the layout. Items on walls and on the floor are not removed."
+            >
+              Reset booth
             </button>
           </div>
 
@@ -429,6 +467,7 @@ export function Booth3DDetailPage() {
                   onOpenDetailItem={(assignmentId) => setDetailTarget({ kind: 'wall', assignmentId })}
                   floorPlacements={floorPlacementsWithItems}
                   onMoveFloorItem={handleMoveFloorItem}
+                  onRotateFloorItem={handleRotateFloorItem}
                   onOpenFloorDetailItem={(placementId) => setDetailTarget({ kind: 'floor', placementId })}
                   onFloorClick={handleFloorClick}
                 />
@@ -492,7 +531,8 @@ export function Booth3DDetailPage() {
                 <>
                   <p className="booth-3d-panel__hint">
                     Click an item, then click the floor to place it freestanding. Drag placed
-                    items to reposition them, or click one to sell or remove it.
+                    items to reposition them, or click one to sell or remove it. Drag the small
+                    dot in front of an item to rotate it — it snaps to 90° angles.
                   </p>
                   <AvailableItemsTray items={availableItems} onSelect={setItemToPlaceOnFloor} />
                 </>
