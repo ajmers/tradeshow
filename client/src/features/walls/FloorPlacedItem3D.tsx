@@ -10,6 +10,18 @@ const INCHES_PER_FOOT = 12
 // Sides/top/bottom/back of a 3D item — there's no photo for those faces, just a
 // plain neutral tone standing in for a canvas edge or frame depth.
 const BOX_SIDE_COLOR = '#a1a1aa'
+const ROTATION_HANDLE_COLOR = '#4338ca'
+// How far past the item's own footprint the rotation handle sits.
+const ROTATION_HANDLE_OFFSET_FT = 0.4
+// Within this many degrees of a 90° multiple, the drag snaps exactly to it.
+const ROTATION_SNAP_THRESHOLD_DEGREES = 8
+
+function snapToNearest90(degrees: number): number {
+  const normalized = ((degrees % 360) + 360) % 360
+  const nearest = Math.round(normalized / 90) * 90
+  const diff = Math.min(Math.abs(normalized - nearest), 360 - Math.abs(normalized - nearest))
+  return diff <= ROTATION_SNAP_THRESHOLD_DEGREES ? nearest % 360 : normalized
+}
 
 interface FloorPlacedItem3DProps {
   placement: FloorPlacement
@@ -17,7 +29,8 @@ interface FloorPlacedItem3DProps {
   boothWidthFt: number
   boothDepthFt: number
   isSold?: boolean
-  onMove?: (placementId: string, xInches: number, yInches: number) => void
+  onMove?: (placementId: string, xInches: number, yInches: number) => Promise<unknown> | void
+  onRotate?: (placementId: string, rotationDegrees: number) => Promise<unknown> | void
   onDragActiveChange?: (active: boolean) => void
   /** A pointer down+up with no meaningful movement in between is a click, not a drag. */
   onOpenDetail?: () => void
@@ -30,6 +43,7 @@ export function FloorPlacedItem3D({
   boothDepthFt,
   isSold,
   onMove,
+  onRotate,
   onDragActiveChange,
   onOpenDetail,
 }: FloorPlacedItem3DProps) {
@@ -53,9 +67,15 @@ export function FloorPlacedItem3D({
   const isDraggingRef = useRef(false)
   const didDragRef = useRef(false)
 
+  // Same "keep the optimistic value until the mutation really lands" approach as
+  // position dragging, for the same reason — otherwise rotation would snap back to
+  // the old angle and then jump again once the refetch completes.
+  const [dragRotationDegrees, setDragRotationDegrees] = useState<number | null>(null)
+  const isRotatingRef = useRef(false)
+
   const xInches = dragPosition?.xInches ?? placement.fields['X Position'] ?? 0
   const yInches = dragPosition?.yInches ?? placement.fields['Y Position'] ?? 0
-  const rotationDegrees = placement.fields['Rotation Angle'] ?? 0
+  const rotationDegrees = dragRotationDegrees ?? placement.fields['Rotation Angle'] ?? 0
 
   // Floor-plan convention: X/Y Position is the item's unrotated top-left corner in a
   // top-down view (X = booth width axis, Y = booth depth axis), matching how Wall
@@ -97,7 +117,7 @@ export function FloorPlacedItem3D({
     })
   }
 
-  function handlePointerUp(event: ThreeEvent<PointerEvent>) {
+  async function handlePointerUp(event: ThreeEvent<PointerEvent>) {
     if (!isDraggingRef.current) {
       return
     }
@@ -106,11 +126,61 @@ export function FloorPlacedItem3D({
     isDraggingRef.current = false
     onDragActiveChange?.(false)
     if (didDragRef.current && dragPosition) {
-      onMove?.(placement.id, dragPosition.xInches, dragPosition.yInches)
-    } else if (!didDragRef.current) {
-      onOpenDetail?.()
+      // Keep showing the dragged-to position until the mutation (and the query
+      // invalidation it triggers) actually lands — clearing it right away would
+      // briefly fall back to the stale pre-drag position and then jump again once
+      // the refetch completes a moment later.
+      try {
+        await onMove?.(placement.id, dragPosition.xInches, dragPosition.yInches)
+      } finally {
+        setDragPosition(null)
+      }
+    } else {
+      if (!didDragRef.current) {
+        onOpenDetail?.()
+      }
+      setDragPosition(null)
     }
-    setDragPosition(null)
+  }
+
+  function handleRotateHandlePointerDown(event: ThreeEvent<PointerEvent>) {
+    event.stopPropagation()
+    isRotatingRef.current = true
+    ;(event.target as Element).setPointerCapture(event.pointerId)
+    onDragActiveChange?.(true)
+  }
+
+  function handleRotateHandlePointerMove(event: ThreeEvent<PointerEvent>) {
+    if (!isRotatingRef.current) {
+      return
+    }
+    event.stopPropagation()
+    const worldPoint = new THREE.Vector3()
+    if (!event.ray.intersectPlane(floorPlane, worldPoint)) {
+      return
+    }
+    // Angle (in the same world-Y-rotation convention as `rotationY` above) from the
+    // item's own center out to the pointer's position on the floor.
+    const theta = Math.atan2(worldPoint.x - x, worldPoint.z - z)
+    const degrees = (-theta * 180) / Math.PI
+    setDragRotationDegrees(snapToNearest90(degrees))
+  }
+
+  async function handleRotateHandlePointerUp(event: ThreeEvent<PointerEvent>) {
+    if (!isRotatingRef.current) {
+      return
+    }
+    event.stopPropagation()
+    ;(event.target as Element).releasePointerCapture(event.pointerId)
+    isRotatingRef.current = false
+    onDragActiveChange?.(false)
+    if (dragRotationDegrees !== null) {
+      try {
+        await onRotate?.(placement.id, dragRotationDegrees)
+      } finally {
+        setDragRotationDegrees(null)
+      }
+    }
   }
 
   // Same top-right-corner placement as wall items, but on the front (+Z) face of the
@@ -126,6 +196,15 @@ export function FloorPlacedItem3D({
     x + localOffsetX * cos + localOffsetZ * sin,
     heightFt / 2 + localOffsetY,
     z - localOffsetX * sin + localOffsetZ * cos,
+  ]
+
+  // Sits like a compass needle just past the item's front edge, in the direction the
+  // item currently faces, so dragging it around the item sets that facing direction.
+  const rotationHandleRadiusFt = Math.max(widthFt, depthFt) / 2 + ROTATION_HANDLE_OFFSET_FT
+  const rotationHandlePosition: [number, number, number] = [
+    x + rotationHandleRadiusFt * Math.sin(rotationY),
+    heightFt + 0.25,
+    z + rotationHandleRadiusFt * Math.cos(rotationY),
   ]
 
   return (
@@ -163,6 +242,15 @@ export function FloorPlacedItem3D({
           height={badgeHeightFt}
         />
       )}
+      <mesh
+        position={rotationHandlePosition}
+        onPointerDown={handleRotateHandlePointerDown}
+        onPointerMove={handleRotateHandlePointerMove}
+        onPointerUp={handleRotateHandlePointerUp}
+      >
+        <sphereGeometry args={[0.12, 16, 16]} />
+        <meshBasicMaterial color={ROTATION_HANDLE_COLOR} toneMapped={false} />
+      </mesh>
     </>
   )
 }

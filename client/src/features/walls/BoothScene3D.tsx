@@ -27,11 +27,12 @@ interface BoothScene3DProps {
   surfaces: Record<BoothSurfaceName, BoothSurfaceOccupant | null>
   selectedSurface: BoothSurfaceName | null
   onSelectSurface: (surface: BoothSurfaceName) => void
-  onMoveItem?: (assignmentId: string, xInches: number, yInches: number) => void
+  onMoveItem?: (assignmentId: string, xInches: number, yInches: number) => Promise<unknown> | void
   onDragActiveChange?: (active: boolean) => void
   onOpenDetailItem?: (assignmentId: string) => void
   floorPlacements: FloorPlacementWithItem[]
-  onMoveFloorItem?: (placementId: string, xInches: number, yInches: number) => void
+  onMoveFloorItem?: (placementId: string, xInches: number, yInches: number) => Promise<unknown> | void
+  onRotateFloorItem?: (placementId: string, rotationDegrees: number) => Promise<unknown> | void
   onOpenFloorDetailItem?: (placementId: string) => void
   onFloorClick?: (xFt: number, zFt: number) => void
 }
@@ -86,6 +87,7 @@ export function BoothScene3D({
   onOpenDetailItem,
   floorPlacements,
   onMoveFloorItem,
+  onRotateFloorItem,
   onOpenFloorDetailItem,
   onFloorClick,
 }: BoothScene3DProps) {
@@ -120,6 +122,7 @@ export function BoothScene3D({
           boothDepthFt={depthFt}
           isSold={isSold}
           onMove={onMoveFloorItem}
+          onRotate={onRotateFloorItem}
           onDragActiveChange={onDragActiveChange}
           onOpenDetail={onOpenFloorDetailItem ? () => onOpenFloorDetailItem(placement.id) : undefined}
         />

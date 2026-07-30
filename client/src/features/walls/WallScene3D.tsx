@@ -12,7 +12,7 @@ interface WallScene3DProps {
   hideFloor?: boolean
   hideLights?: boolean
   interactive?: boolean
-  onMoveItem?: (assignmentId: string, xInches: number, yInches: number) => void
+  onMoveItem?: (assignmentId: string, xInches: number, yInches: number) => Promise<unknown> | void
   onDragActiveChange?: (active: boolean) => void
   onOpenDetailItem?: (assignmentId: string) => void
 }
