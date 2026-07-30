@@ -112,17 +112,21 @@ export function BoothScene3D({
                 <WallScene3D wall={occupant.wall} placedItems={occupant.placedItems} hideFloor hideLights />
               </group>
             ) : (
-              <mesh onClick={handleClick}>
-                <planeGeometry args={[faceWidthFt, planeHeightFt]} />
-                <meshStandardMaterial
-                  color={isSelected ? '#a5b4fc' : '#e5e7eb'}
-                  opacity={0.35}
-                  transparent
-                  side={THREE.DoubleSide}
-                />
-              </mesh>
+              <>
+                {/* Fully transparent — an open surface is a gap, not a wall. The mesh
+                    stays in the scene purely as a click target; only the outline below
+                    marks where it is. */}
+                <mesh onClick={handleClick}>
+                  <planeGeometry args={[faceWidthFt, planeHeightFt]} />
+                  <meshBasicMaterial transparent opacity={0} side={THREE.DoubleSide} depthWrite={false} />
+                </mesh>
+                <lineSegments>
+                  <edgesGeometry args={[new THREE.PlaneGeometry(faceWidthFt, planeHeightFt)]} />
+                  <lineBasicMaterial color={isSelected ? '#4338ca' : '#a1a1aa'} />
+                </lineSegments>
+              </>
             )}
-            {isSelected && (
+            {occupant && isSelected && (
               <lineSegments>
                 <edgesGeometry args={[new THREE.PlaneGeometry(faceWidthFt, planeHeightFt)]} />
                 <lineBasicMaterial color="#4338ca" />

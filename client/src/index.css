@@ -704,6 +704,13 @@ dialog.booth-report-dialog {
 .wall-editor-color-picker {
   display: flex;
   align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.wall-editor-color-picker label {
+  display: flex;
+  align-items: center;
   gap: 0.5rem;
   font-size: 0.875rem;
 }
@@ -714,6 +721,21 @@ dialog.booth-report-dialog {
   padding: 0;
   border: 1px solid light-dark(#d4d4d8, #3f3f46);
   border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+.wall-editor-color-picker__swatches {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.wall-editor-color-picker__swatch {
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: 1px solid light-dark(#d4d4d8, #3f3f46);
+  border-radius: 999px;
   cursor: pointer;
 }
 
