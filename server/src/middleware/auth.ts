@@ -1,5 +1,6 @@
 import type { MiddlewareHandler } from 'hono'
 import { createClient } from '@supabase/supabase-js'
+import { DEFAULT_FEATURE_FLAGS, type FeatureFlags } from '@shared'
 import { env } from '@/lib/env'
 import type { AppEnv } from '@/lib/hono'
 
@@ -22,7 +23,7 @@ export const requireAuth: MiddlewareHandler<AppEnv> = async (c, next) => {
 
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('airtable_base_id')
+    .select('airtable_base_id, feature_flags')
     .eq('id', userData.user.id)
     .single()
 
@@ -35,6 +36,10 @@ export const requireAuth: MiddlewareHandler<AppEnv> = async (c, next) => {
   // purely the user-to-base link, and app_metadata is only writable via the service-role
   // admin API, so a user can never grant it to themselves by editing their own row.
   c.set('isAdmin', userData.user.app_metadata?.is_admin === true)
+  c.set('featureFlags', {
+    ...DEFAULT_FEATURE_FLAGS,
+    ...(profile.feature_flags as Partial<FeatureFlags> | null),
+  })
   await next()
 }
 

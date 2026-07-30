@@ -1199,6 +1199,14 @@ dialog.item-detail-dialog::backdrop {
   color: inherit;
 }
 
+.admin-users-table__checkbox-cell {
+  text-align: center;
+}
+
+.admin-section + .admin-section {
+  margin-top: 2.5rem;
+}
+
 .label-printer-page {
   max-width: none;
 }

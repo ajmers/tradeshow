@@ -6,6 +6,7 @@ import { useWalls } from '@/hooks/useWalls'
 import { useItems } from '@/hooks/useItems'
 import { useWallAssignments } from '@/hooks/useWallAssignments'
 import { useSales } from '@/hooks/useSales'
+import { useBaseInfo } from '@/hooks/useBaseInfo'
 import { WallsGrid, type WallWithPlacements } from '@/features/walls/WallsGrid'
 import { WallFormDialog } from '@/features/walls/WallFormDialog'
 import { Booth3DView } from '@/features/walls/Booth3DView'
@@ -68,9 +69,13 @@ export function BoothDetailPage() {
   const items = useItems()
   const wallAssignments = useWallAssignments()
   const sales = useSales()
+  const baseInfo = useBaseInfo()
   const [showAddWall, setShowAddWall] = useState(false)
   const [showReport, setShowReport] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('2d')
+  // Defaults to enabled while base info is still loading, so the toggle doesn't flash
+  // away and back once it resolves (it's normally already cached from AppLayout).
+  const booth3dEnabled = baseInfo.data?.featureFlags.boothPlanner3d ?? true
 
   const isPending =
     booths.isPending || walls.isPending || items.isPending || wallAssignments.isPending || sales.isPending
@@ -130,27 +135,31 @@ export function BoothDetailPage() {
           <h1>{boothName}</h1>
           <BoothActionsMenu onRunReport={() => setShowReport(true)} />
         </div>
-        <div className="view-toggle" role="group" aria-label="View mode">
-          <button
-            type="button"
-            className={`view-toggle__button${viewMode === '2d' ? ' view-toggle__button--active' : ''}`}
-            aria-pressed={viewMode === '2d'}
-            onClick={() => setViewMode('2d')}
-          >
-            2D
-          </button>
-          <button
-            type="button"
-            className={`view-toggle__button${viewMode === '3d' ? ' view-toggle__button--active' : ''}`}
-            aria-pressed={viewMode === '3d'}
-            onClick={() => setViewMode('3d')}
-          >
-            3D
-          </button>
-        </div>
+        {booth3dEnabled && (
+          <div className="view-toggle" role="group" aria-label="View mode">
+            <button
+              type="button"
+              className={`view-toggle__button${viewMode === '2d' ? ' view-toggle__button--active' : ''}`}
+              aria-pressed={viewMode === '2d'}
+              onClick={() => setViewMode('2d')}
+            >
+              2D
+            </button>
+            <button
+              type="button"
+              className={`view-toggle__button${viewMode === '3d' ? ' view-toggle__button--active' : ''}`}
+              aria-pressed={viewMode === '3d'}
+              onClick={() => setViewMode('3d')}
+            >
+              3D
+            </button>
+          </div>
+        )}
       </div>
 
-      {viewMode === '2d' ? (
+      {booth3dEnabled && viewMode === '3d' ? (
+        <Booth3DView booth={booth} />
+      ) : (
         <section>
           <div className="page-toolbar">
             <h2>Walls</h2>
@@ -160,8 +169,6 @@ export function BoothDetailPage() {
           </div>
           <WallsGrid walls={wallsWithPlacements} boothId={booth.id} />
         </section>
-      ) : (
-        <Booth3DView booth={booth} />
       )}
 
       {showAddWall && (

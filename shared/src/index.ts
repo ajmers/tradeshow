@@ -1,4 +1,5 @@
 export * from './schemas/health'
+export * from './schemas/featureFlags'
 export * from './schemas/base'
 export * from './schemas/admin'
 export * from './schemas/consigner'

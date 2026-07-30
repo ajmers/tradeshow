@@ -4,6 +4,7 @@ import {
   airtableBaseSummarySchema,
   type AdminUser,
   type AirtableBaseSummary,
+  type FeatureFlags,
 } from '@shared'
 import { apiFetch } from '@/lib/apiFetch'
 
@@ -31,5 +32,19 @@ export async function updateUserBase(userId: string, airtableBaseId: string): Pr
   })
   if (!res.ok) {
     throw new Error(`Failed to update user: ${res.status}`)
+  }
+}
+
+export async function updateUserFeatureFlags(
+  userId: string,
+  featureFlags: Partial<FeatureFlags>,
+): Promise<void> {
+  const res = await apiFetch(`/api/admin/users/${userId}/feature-flags`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ featureFlags }),
+  })
+  if (!res.ok) {
+    throw new Error(`Failed to update feature flags: ${res.status}`)
   }
 }
