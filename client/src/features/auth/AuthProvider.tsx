@@ -6,6 +6,11 @@ import { AuthContext } from '@/features/auth/AuthContext'
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  // A password-recovery link logs the user into a real session before they've
+  // chosen a new password, so this has to be tracked separately from `session`
+  // — otherwise AuthGate would drop them straight into the app instead of the
+  // "set a new password" form.
+  const [passwordRecovery, setPasswordRecovery] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -13,12 +18,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false)
     })
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, newSession) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setPasswordRecovery(true)
+      }
       setSession(newSession)
     })
 
     return () => listener.subscription.unsubscribe()
   }, [])
 
-  return <AuthContext.Provider value={{ session, loading }}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider
+      value={{
+        session,
+        loading,
+        passwordRecovery,
+        clearPasswordRecovery: () => setPasswordRecovery(false),
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
 }
