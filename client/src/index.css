@@ -471,11 +471,11 @@ dialog.item-dialog textarea {
   margin: 0 0 0.25rem;
 }
 
-.booth-actions-menu {
+.actions-menu {
   position: relative;
 }
 
-.booth-actions-menu__trigger {
+.actions-menu__trigger {
   border: none;
   background: none;
   padding: 0.125rem 0.375rem;
@@ -484,12 +484,12 @@ dialog.item-dialog textarea {
   color: light-dark(#71717a, #a1a1aa);
 }
 
-.booth-actions-menu__trigger:hover {
+.actions-menu__trigger:hover {
   color: inherit;
   background: light-dark(#f4f4f5, #27272a);
 }
 
-.booth-actions-menu__dropdown {
+.actions-menu__dropdown {
   position: absolute;
   top: calc(100% + 0.25rem);
   left: 0;
@@ -504,7 +504,7 @@ dialog.item-dialog textarea {
   padding: 0.25rem;
 }
 
-.booth-actions-menu__dropdown button {
+.actions-menu__dropdown button {
   border: none;
   background: none;
   text-align: left;
@@ -512,11 +512,11 @@ dialog.item-dialog textarea {
   border-radius: 0.375rem;
 }
 
-.booth-actions-menu__dropdown button:hover {
+.actions-menu__dropdown button:hover {
   background: light-dark(#f4f4f5, #27272a);
 }
 
-.booth-actions-menu__delete {
+.actions-menu__delete {
   color: light-dark(#b91c1c, #f87171);
 }
 
@@ -995,6 +995,12 @@ dialog.booth-report-dialog {
   font-size: 0.8125rem;
   font-weight: 600;
   color: light-dark(#52525b, #a1a1aa);
+}
+
+.wall-editor-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
 }
 
 .wall-editor-color-picker {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import type { Item, Wall, WallAssignment } from '@shared'
 import { Breadcrumb } from '@/components/Breadcrumb'
@@ -126,13 +126,11 @@ function findSpotOnWall(
 
 type ViewMode = '2d' | '3d'
 
-function BoothActionsMenu({
-  onRunReport,
-  onDelete,
-}: {
-  onRunReport: () => void
-  onDelete: () => void
-}) {
+// Generic "..." menu used for both booth-level and wall-level actions — each
+// caller supplies its own menuitem buttons as children. Closes on any click
+// inside the dropdown (via bubbling) so individual items don't each need to
+// know how to close the menu themselves.
+function ActionsMenu({ label, children }: { label: string; children: ReactNode }) {
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -150,40 +148,20 @@ function BoothActionsMenu({
   }, [open])
 
   return (
-    <div className="booth-actions-menu" ref={menuRef}>
+    <div className="actions-menu" ref={menuRef}>
       <button
         type="button"
-        className="booth-actions-menu__trigger"
+        className="actions-menu__trigger"
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Booth actions"
+        aria-label={label}
         onClick={() => setOpen((prev) => !prev)}
       >
         ⋯
       </button>
       {open && (
-        <div className="booth-actions-menu__dropdown" role="menu">
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setOpen(false)
-              onRunReport()
-            }}
-          >
-            Run Booth Report
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            className="booth-actions-menu__delete"
-            onClick={() => {
-              setOpen(false)
-              onDelete()
-            }}
-          >
-            Delete Booth
-          </button>
+        <div className="actions-menu__dropdown" role="menu" onClick={() => setOpen(false)}>
+          {children}
         </div>
       )}
     </div>
@@ -435,10 +413,37 @@ export function WallDetailPage() {
         <div className="page-toolbar__title">
           <div>
             <p className="wall-editor-booth-label">{boothName}</p>
-            <h1>{wall ? (wall.fields['Wall Name'] ?? 'Untitled wall') : 'No walls yet'}</h1>
+            <div className="wall-editor-name-row">
+              <h1>{wall ? (wall.fields['Wall Name'] ?? 'Untitled wall') : 'No walls yet'}</h1>
+              {wall && (
+                <ActionsMenu label="Wall actions">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="actions-menu__delete"
+                    onClick={handleDeleteWall}
+                    disabled={deleteWall.isPending}
+                  >
+                    {deleteWall.isPending ? 'Deleting…' : 'Delete Wall'}
+                  </button>
+                </ActionsMenu>
+              )}
+            </div>
             {wall && viewMode === '2d' && <WallDimensionsEditor wall={wall} key={wall.id} />}
           </div>
-          <BoothActionsMenu onRunReport={() => setShowReport(true)} onDelete={handleDeleteBooth} />
+          <ActionsMenu label="Booth actions">
+            <button type="button" role="menuitem" onClick={() => setShowReport(true)}>
+              Run Booth Report
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="actions-menu__delete"
+              onClick={handleDeleteBooth}
+            >
+              Delete Booth
+            </button>
+          </ActionsMenu>
         </div>
         {booth3dEnabled && (
           <div className="view-toggle" role="group" aria-label="View mode">
@@ -469,14 +474,8 @@ export function WallDetailPage() {
           {wall && (
             <div className="wall-editor-toolbar__controls">
               <WallColorPicker wall={wall} boothWalls={boothWalls} />
-              <button type="button" onClick={() => setShowGrid((prev) => !prev)}>
-                {showGrid ? 'Hide gridlines' : 'Show gridlines'}
-              </button>
               <button type="button" onClick={printWallCanvas}>
                 Print Wall
-              </button>
-              <button type="button" onClick={handleDeleteWall} disabled={deleteWall.isPending}>
-                {deleteWall.isPending ? 'Deleting…' : 'Delete Wall'}
               </button>
             </div>
           )}
@@ -514,6 +513,7 @@ export function WallDetailPage() {
                 onMove={handleMove}
                 onTransformEnd={handleTransformEnd}
                 showGrid={showGrid}
+                onToggleGrid={() => setShowGrid((prev) => !prev)}
               />
             ) : (
               <div className="wall-editor-empty">

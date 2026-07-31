@@ -48,6 +48,7 @@ interface WallAssignmentCanvasProps {
     rotationDegrees: number,
   ) => void
   showGrid?: boolean
+  onToggleGrid: () => void
 }
 
 export function WallAssignmentCanvas({
@@ -58,6 +59,7 @@ export function WallAssignmentCanvas({
   onMove,
   onTransformEnd,
   showGrid = true,
+  onToggleGrid,
 }: WallAssignmentCanvasProps) {
   const nodeRefs = useRef(new Map<string, Konva.Group>())
   const transformerRef = useRef<Konva.Transformer>(null)
@@ -224,6 +226,9 @@ export function WallAssignmentCanvas({
           aria-label="Zoom in"
         >
           +
+        </button>
+        <button type="button" onClick={onToggleGrid}>
+          {showGrid ? 'Hide gridlines' : 'Show gridlines'}
         </button>
       </div>
       <div
