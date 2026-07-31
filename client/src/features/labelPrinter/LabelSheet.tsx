@@ -6,7 +6,7 @@ import type { Item } from '@shared'
 import { LABEL_FIELDS } from '@/features/labelPrinter/labelFields'
 import { PAGE_LAYOUTS } from '@/features/labelPrinter/labelPrinterConfig'
 import {
-  bucketItemsByWordCount,
+  bucketItemsByLabelSize,
   BUCKET_LABELS_PER_PAGE,
   BUCKET_TITLES,
 } from '@/features/labelPrinter/labelBucketing'
@@ -43,7 +43,7 @@ export function LabelSheet({ items, fieldKeys, showLogo, logoDataUrl }: LabelShe
     return <p>Select at least one item to preview labels.</p>
   }
 
-  const groups = bucketItemsByWordCount(items, fields)
+  const groups = bucketItemsByLabelSize(items, fields)
 
   return (
     <div className="label-sheet">

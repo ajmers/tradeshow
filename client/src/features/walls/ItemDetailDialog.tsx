@@ -20,9 +20,23 @@ function MoveIcon() {
   )
 }
 
+function TagIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+      <path d="M11 3.5h6.5a1 1 0 0 1 1 1V11a1 1 0 0 1-.29.71l-8 8a1 1 0 0 1-1.42 0l-6.5-6.5a1 1 0 0 1 0-1.42l8-8a1 1 0 0 1 .71-.29z" />
+      <circle cx="15.5" cy="7.5" r="1.2" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
 interface MoveOptions {
   otherWalls: Wall[]
   onMove: (targetWallId: string) => Promise<unknown>
+}
+
+interface LabelOptions {
+  isHidden: boolean
+  onToggleHidden: () => Promise<unknown>
 }
 
 interface ItemDetailDialogProps {
@@ -37,6 +51,8 @@ interface ItemDetailDialogProps {
   /** Omit for floor placements — "move to another wall" only makes sense for an
    *  item that's actually on a wall. */
   moveOptions?: MoveOptions
+  /** Omit for floor placements — a floor item has no on-wall label to hide. */
+  labelOptions?: LabelOptions
 }
 
 export function ItemDetailDialog({
@@ -46,6 +62,7 @@ export function ItemDetailDialog({
   onRemove,
   onClose,
   moveOptions,
+  labelOptions,
 }: ItemDetailDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const moveMenuRef = useRef<HTMLDivElement>(null)
@@ -57,6 +74,7 @@ export function ItemDetailDialog({
   const [submitting, setSubmitting] = useState(false)
   const [removing, setRemoving] = useState(false)
   const [moving, setMoving] = useState(false)
+  const [togglingLabel, setTogglingLabel] = useState(false)
 
   const createSale = useCreateSale()
 
@@ -109,6 +127,18 @@ export function ItemDetailDialog({
       dialogRef.current?.close()
     } finally {
       setMoving(false)
+    }
+  }
+
+  const handleToggleLabel = async () => {
+    if (!labelOptions) {
+      return
+    }
+    setTogglingLabel(true)
+    try {
+      await labelOptions.onToggleHidden()
+    } finally {
+      setTogglingLabel(false)
     }
   }
 
@@ -203,6 +233,12 @@ export function ItemDetailDialog({
                   </div>
                 )}
               </div>
+            )}
+            {labelOptions && (
+              <button type="button" onClick={handleToggleLabel} disabled={togglingLabel}>
+                <TagIcon />
+                {togglingLabel ? 'Updating…' : labelOptions.isHidden ? 'Add Label' : 'Remove Label'}
+              </button>
             )}
             {!fields['Is Prop'] && (
               <button type="button" className="item-detail__sell-button" onClick={() => setMode('sell')}>

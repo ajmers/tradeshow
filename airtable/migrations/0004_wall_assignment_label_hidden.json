@@ -1,0 +1,11 @@
+{
+  "description": "Adds Label Hidden to Wall Assignments, letting a placed item's on-wall label be removed without affecting the item's own wall placement.",
+  "fields": [
+    {
+      "table": "Wall Assignments",
+      "name": "Label Hidden",
+      "type": "checkbox",
+      "options": { "icon": "check", "color": "grayBright" }
+    }
+  ]
+}

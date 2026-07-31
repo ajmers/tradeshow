@@ -21,6 +21,10 @@ export const itemFieldsSchema = z.object({
   Discount: z.number().optional(),
   Label: z.string().optional(),
   'Label Title': z.string().optional(),
+  // Pins this item's label to a specific print/wall size instead of it being
+  // auto-classified from content length (see labelSizeBucket() in the
+  // client's labelBucketing.ts). Unset = automatic.
+  'Label Size': z.enum(['Small', 'Medium', 'Large', 'Full-page']).optional(),
   'Is Prop': z.boolean().optional(),
 })
 

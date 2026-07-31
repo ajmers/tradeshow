@@ -11,6 +11,7 @@ export interface LabelPrinterConfig {
 // options rather than free-form rows/columns, since what matters to the user is
 // how many labels come out of the printer per sheet, not the grid dimensions.
 export const PAGE_LAYOUTS: Record<number, { columns: number; rows: number }> = {
+  1: { columns: 1, rows: 1 },
   2: { columns: 1, rows: 2 },
   4: { columns: 2, rows: 2 },
   6: { columns: 2, rows: 3 },

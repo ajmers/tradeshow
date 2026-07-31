@@ -1,21 +1,19 @@
-import type { ReactNode } from 'react'
 import { Group, Rect, Text } from 'react-konva'
 import type { Item, WallAssignment } from '@shared'
 import { itemFootprintInches } from '@/features/walls/wallScale'
-import {
-  FIELD_FONT_FAMILY,
-  FIELD_FONT_PX,
-  LINE_HEIGHT_RATIO,
-  PADDING_INCHES,
-  PX_PER_INCH,
-  TITLE_FONT_FAMILY,
-  TITLE_FONT_PX,
-} from '@/features/walls/labelDimensions'
-import {
-  defaultLabelPosition,
-  labelDimensionsForItem,
-  labelLinesForItem,
-} from '@/features/walls/labelPlacement'
+import { defaultLabelPosition, labelLinesForItem, labelSizeInches } from '@/features/walls/labelPlacement'
+
+// Matches the print label's own font sizes (see .label-sheet__field /
+// .label-sheet__field--Title in index.css), converted at the CSS-spec-standard
+// 96px/in reference pixel — so the label reads at roughly the size it would
+// actually print at, once scaled onto the wall canvas below.
+const TITLE_FONT_PX = 21.33 // 16pt
+const FIELD_FONT_PX = 18.67 // 14pt
+const TITLE_FONT_FAMILY = "'Libertinus Serif', Georgia, serif"
+const FIELD_FONT_FAMILY = "'Source Sans 3', system-ui, sans-serif"
+const LINE_HEIGHT_RATIO = 1.2
+const PADDING_INCHES = 0.12
+const PX_PER_INCH = 96
 
 interface LabelNodeProps {
   assignment: WallAssignment
@@ -25,13 +23,18 @@ interface LabelNodeProps {
   onMove?: (assignmentId: string, xInches: number, yInches: number) => void
 }
 
+// Deliberately true-to-scale, same as PlacedItemNode: no minimum-size floor
+// bumping it up when zoomed out. The whole point of putting labels on the
+// wall canvas is to see their real physical size and placement relative to
+// the wall and the art, so an artificially inflated label would misrepresent
+// exactly the thing this is for. Zoom in (the canvas already supports it) to
+// read a label at a given moment; the canvas itself stays accurate throughout.
 export function LabelNode({ assignment, item, scale, interactive = false, onMove }: LabelNodeProps) {
   const lines = labelLinesForItem(item)
-  if (lines.length === 0) {
+  if (lines.length === 0 || assignment.fields['Label Hidden']) {
     return null
   }
 
-  const dims = labelDimensionsForItem(item)
   const itemFootprint = itemFootprintInches(item.fields)
   const itemX = assignment.fields['X Position'] ?? 0
   const itemY = assignment.fields['Y Position'] ?? 0
@@ -40,42 +43,18 @@ export function LabelNode({ assignment, item, scale, interactive = false, onMove
   const xInches = assignment.fields['Label X Position'] ?? fallback.x
   const yInches = assignment.fields['Label Y Position'] ?? fallback.y
 
-  const w = dims.widthInches * scale
-  const h = dims.heightInches * scale
-  // Same px-per-inch -> canvas-scale conversion as the box itself, so the drawn
-  // text is proportioned exactly like the real-world label it's estimating.
+  const { width: labelWidthInches, height: labelHeightInches } = labelSizeInches(item)
+
+  const w = labelWidthInches * scale
+  const h = labelHeightInches * scale
+  const paddingPx = PADDING_INCHES * scale
   const titleFontSize = (TITLE_FONT_PX / PX_PER_INCH) * scale
   const fieldFontSize = (FIELD_FONT_PX / PX_PER_INCH) * scale
-  const paddingPx = PADDING_INCHES * scale
+  const titleLineHeight = titleFontSize * LINE_HEIGHT_RATIO
 
-  // Builds each line's vertical offset functionally (rather than mutating a
-  // running counter across the .map()) — each step folds in the previous
-  // lines' total height so far.
-  const { nodes: textNodes } = lines.reduce<{ nodes: ReactNode[]; y: number }>(
-    (acc, line, index) => {
-      const fontSize = line.isTitle ? titleFontSize : fieldFontSize
-      const lineHeight = fontSize * LINE_HEIGHT_RATIO
-      return {
-        nodes: [
-          ...acc.nodes,
-          <Text
-            key={index}
-            text={line.text}
-            x={paddingPx}
-            y={acc.y}
-            width={w - paddingPx * 2}
-            fontFamily={line.isTitle ? TITLE_FONT_FAMILY : FIELD_FONT_FAMILY}
-            fontStyle={line.isTitle ? 'bold' : 'normal'}
-            fontSize={fontSize}
-            lineHeight={LINE_HEIGHT_RATIO}
-            fill="#18181b"
-          />,
-        ],
-        y: acc.y + lineHeight,
-      }
-    },
-    { nodes: [], y: paddingPx },
-  )
+  const titleLine = lines.find((line) => line.isTitle)
+  const priceLine = lines.find((line) => !line.isTitle)
+  const textWidth = w - paddingPx * 2
 
   return (
     <Group
@@ -92,7 +71,37 @@ export function LabelNode({ assignment, item, scale, interactive = false, onMove
       }
     >
       <Rect width={w} height={h} fill="#fff" stroke="#a1a1aa" strokeWidth={1} cornerRadius={2} />
-      {textNodes}
+      {titleLine && (
+        <Text
+          text={titleLine.text}
+          x={paddingPx}
+          y={paddingPx}
+          width={textWidth}
+          height={titleLineHeight}
+          wrap="none"
+          ellipsis
+          fontFamily={TITLE_FONT_FAMILY}
+          fontStyle="bold"
+          fontSize={titleFontSize}
+          lineHeight={LINE_HEIGHT_RATIO}
+          fill="#18181b"
+        />
+      )}
+      {priceLine && (
+        <Text
+          text={priceLine.text}
+          x={paddingPx}
+          y={paddingPx + titleLineHeight}
+          width={textWidth}
+          height={h - paddingPx * 2 - titleLineHeight}
+          wrap="none"
+          ellipsis
+          fontFamily={FIELD_FONT_FAMILY}
+          fontSize={fieldFontSize}
+          lineHeight={LINE_HEIGHT_RATIO}
+          fill="#52525b"
+        />
+      )}
     </Group>
   )
 }

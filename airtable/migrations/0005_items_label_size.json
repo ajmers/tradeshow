@@ -1,0 +1,18 @@
+{
+  "description": "Adds an optional Label Size to Items, letting a user pin a label to a specific print/wall size instead of it being auto-chosen from content length.",
+  "fields": [
+    {
+      "table": "Items",
+      "name": "Label Size",
+      "type": "singleSelect",
+      "options": {
+        "choices": [
+          { "name": "Small" },
+          { "name": "Medium" },
+          { "name": "Large" },
+          { "name": "Full-page" }
+        ]
+      }
+    }
+  ]
+}

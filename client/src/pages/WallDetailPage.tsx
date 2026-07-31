@@ -568,6 +568,14 @@ export function WallDetailPage() {
             onMove: (targetWallId) =>
               handleMoveToWall(detailItem.assignment, detailItem.item, targetWallId),
           }}
+          labelOptions={{
+            isHidden: Boolean(detailItem.assignment.fields['Label Hidden']),
+            onToggleHidden: () =>
+              updateAssignment.mutateAsync({
+                id: detailItem.assignment.id,
+                input: { 'Label Hidden': !detailItem.assignment.fields['Label Hidden'] },
+              }),
+          }}
         />
       )}
     </main>

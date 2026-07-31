@@ -13,6 +13,10 @@ export const wallAssignmentFieldsSchema = z.object({
   // spot (see defaultLabelPosition in the client's labelPlacement.ts).
   'Label X Position': z.number().optional(),
   'Label Y Position': z.number().optional(),
+  // Airtable checkboxes are only ever present-and-true when checked, absent
+  // when not — so "hidden" is the true case and unset means "shown" (the
+  // default for every existing/newly-created assignment).
+  'Label Hidden': z.boolean().optional(),
   Notes: z.string().optional(),
   Order: z.number().optional(),
 })
@@ -42,6 +46,7 @@ export const updateWallAssignmentInputSchema = z.object({
   'Rotation Angle': z.number().optional(),
   'Label X Position': z.number().optional(),
   'Label Y Position': z.number().optional(),
+  'Label Hidden': z.boolean().optional(),
 })
 
 export type WallAssignmentFields = z.infer<typeof wallAssignmentFieldsSchema>

@@ -63,6 +63,12 @@ export function NewLabelItemDialog({ onClose, onCreated }: NewLabelItemDialogPro
         Title: getString('Title') ?? '',
         'Label Title': getString('Label Title'),
         Label: getString('Label'),
+        'Label Size': getString('Label Size') as
+          | 'Small'
+          | 'Medium'
+          | 'Large'
+          | 'Full-page'
+          | undefined,
       })
       // The mutation's own invalidateQueries triggers a background refetch, but
       // that's async — seed the cache with this exact response right away so
@@ -133,6 +139,16 @@ export function NewLabelItemDialog({ onClose, onCreated }: NewLabelItemDialogPro
         <label>
           Label (printed on the label sheet — supports basic Markdown)
           <textarea name="Label" rows={3} />
+        </label>
+        <label>
+          Label Size
+          <select name="Label Size" defaultValue="">
+            <option value="">Auto-size (based on content length)</option>
+            <option value="Small">Small (8 per page)</option>
+            <option value="Medium">Medium (4 per page)</option>
+            <option value="Large">Large (2 per page)</option>
+            <option value="Full-page">Full-page</option>
+          </select>
         </label>
 
         {error && (
