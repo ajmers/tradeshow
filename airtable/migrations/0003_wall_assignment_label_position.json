@@ -1,0 +1,7 @@
+{
+  "description": "Adds Label X/Y Position to Wall Assignments, for drag-positioning an item's on-wall label independently of the item itself.",
+  "fields": [
+    { "table": "Wall Assignments", "name": "Label X Position", "type": "number", "options": { "precision": 1 } },
+    { "table": "Wall Assignments", "name": "Label Y Position", "type": "number", "options": { "precision": 1 } }
+  ]
+}
