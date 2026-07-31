@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type WheelEvent as ReactWheelEvent } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import type Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import { Stage, Layer, Rect, Group, Transformer } from 'react-konva'
@@ -83,9 +83,13 @@ export function WallAssignmentCanvas({
     setZoom((current) => clampZoom(updater(current)))
   }
 
-  function handleWheel(event: ReactWheelEvent<HTMLDivElement>) {
-    event.preventDefault()
-    adjustZoom((current) => current - event.deltaY * ZOOM_WHEEL_SENSITIVITY)
+  // Attached to the Stage itself (sized exactly to canvasWidth x canvasHeight) rather
+  // than the surrounding scrollable viewport div, which is often much larger than the
+  // rendered wall (it's sized to fill available layout space) — wheel/trackpad scrolling
+  // over that surrounding empty space would otherwise zoom too, not just over the canvas.
+  function handleWheel(event: KonvaEventObject<WheelEvent>) {
+    event.evt.preventDefault()
+    adjustZoom((current) => current - event.evt.deltaY * ZOOM_WHEEL_SENSITIVITY)
   }
 
   // Scrolling now zooms rather than panning, so dragging on empty canvas space is the
@@ -225,10 +229,14 @@ export function WallAssignmentCanvas({
       <div
         className="wall-editor-canvas"
         ref={containerRef}
-        onWheel={handleWheel}
         style={{ width: availableSize.width, height: availableSize.height }}
       >
-        <Stage width={canvasWidth} height={canvasHeight} onMouseDown={handleStageMouseDown}>
+        <Stage
+          width={canvasWidth}
+          height={canvasHeight}
+          onMouseDown={handleStageMouseDown}
+          onWheel={handleWheel}
+        >
           <Layer>
             <Rect x={0} y={0} width={canvasWidth} height={canvasHeight} fill="#d4d4d8" />
             <Group x={marginX} y={marginY}>
