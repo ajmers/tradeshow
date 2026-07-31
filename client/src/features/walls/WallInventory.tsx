@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import type { PlacedItem } from '@/features/walls/PlacedItem'
 import { getItemImageUrl } from '@/features/items/getItemImageUrl'
 
@@ -6,17 +5,23 @@ interface WallInventoryProps {
   placedItems: PlacedItem[]
   selectedAssignmentId: string | null
   onSelect: (assignmentId: string) => void
+  isOpen: boolean
+  onToggle: () => void
 }
 
-export function WallInventory({ placedItems, selectedAssignmentId, onSelect }: WallInventoryProps) {
-  const [isOpen, setIsOpen] = useState(true)
-
+export function WallInventory({
+  placedItems,
+  selectedAssignmentId,
+  onSelect,
+  isOpen,
+  onToggle,
+}: WallInventoryProps) {
   return (
     <aside className={isOpen ? 'wall-inventory' : 'wall-inventory wall-inventory--collapsed'}>
       <button
         type="button"
         className="wall-inventory__toggle"
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={onToggle}
         aria-label={isOpen ? 'Collapse wall inventory' : 'Expand wall inventory'}
       >
         {isOpen ? '›' : '‹'}

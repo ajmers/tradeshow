@@ -92,6 +92,7 @@ export function WallDetailPage() {
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null)
   const [detailAssignmentId, setDetailAssignmentId] = useState<string | null>(null)
   const [showGrid, setShowGrid] = useState(true)
+  const [inventoryOpen, setInventoryOpen] = useState(true)
 
   // Delete/Backspace removes the selected item directly from the canvas. Only active
   // while the detail dialog is closed, so it never fights with typing in the Sell form.
@@ -260,7 +261,7 @@ export function WallDetailPage() {
   }
 
   return (
-    <main>
+    <main className={inventoryOpen ? 'wall-detail-page' : 'wall-detail-page wall-detail-page--inventory-collapsed'}>
       <Breadcrumb
         items={[
           { label: 'Booth Planner', to: '/booth-planner' },
@@ -319,6 +320,8 @@ export function WallDetailPage() {
         placedItems={placedItems}
         selectedAssignmentId={selectedAssignmentId}
         onSelect={handleListSelect}
+        isOpen={inventoryOpen}
+        onToggle={() => setInventoryOpen((prev) => !prev)}
       />
 
       <section>

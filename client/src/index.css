@@ -816,6 +816,20 @@ dialog.booth-report-dialog {
   text-decoration: underline;
 }
 
+/* wall-inventory is a fixed panel pinned to the viewport's right edge (see
+   .wall-inventory below), so it can sit on top of this page's own content
+   instead of pushing it in normal flow. This padding reserves that space
+   instead, so nothing here — particularly the other-wall thumbnails — ends
+   up hidden underneath it. */
+.wall-detail-page {
+  padding-right: calc(18rem + 1rem);
+  transition: padding-right 0.2s ease;
+}
+
+.wall-detail-page--inventory-collapsed {
+  padding-right: calc(2.5rem + 1rem);
+}
+
 .wall-editor-toolbar {
   display: flex;
   align-items: center;
