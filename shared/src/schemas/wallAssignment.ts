@@ -29,6 +29,9 @@ export const createWallAssignmentInputSchema = z.object({
 })
 
 export const updateWallAssignmentInputSchema = z.object({
+  // Lets an assignment move to a different wall in the same booth without
+  // deleting and recreating the record (which would lose its id/Notes/Order).
+  Wall: z.array(z.string()).min(1).optional(),
   'X Position': z.number().optional(),
   'Y Position': z.number().optional(),
   'Rotation Angle': z.number().optional(),

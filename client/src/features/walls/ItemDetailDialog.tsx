@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import type { Item } from '@shared'
+import type { Item, Wall } from '@shared'
 import { getItemImageUrl } from '@/features/items/getItemImageUrl'
 import { useCreateSale } from '@/hooks/useSaleMutations'
+
+interface MoveOptions {
+  otherWalls: Wall[]
+  onMove: (targetWallId: string) => Promise<unknown>
+}
 
 interface ItemDetailDialogProps {
   item: Item
@@ -12,16 +17,27 @@ interface ItemDetailDialogProps {
    *  dialog awaits it and closes on success, same as it already does for selling. */
   onRemove: () => Promise<unknown>
   onClose: () => void
+  /** Omit for floor placements — "move to another wall" only makes sense for an
+   *  item that's actually on a wall. */
+  moveOptions?: MoveOptions
 }
 
-export function ItemDetailDialog({ item, boothId, removeLabel, onRemove, onClose }: ItemDetailDialogProps) {
+export function ItemDetailDialog({
+  item,
+  boothId,
+  removeLabel,
+  onRemove,
+  onClose,
+  moveOptions,
+}: ItemDetailDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
-  const [mode, setMode] = useState<'details' | 'sell'>('details')
+  const [mode, setMode] = useState<'details' | 'sell' | 'move'>('details')
   const [salePrice, setSalePrice] = useState('')
   const [saleNotes, setSaleNotes] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [removing, setRemoving] = useState(false)
+  const [moving, setMoving] = useState(false)
 
   const createSale = useCreateSale()
 
@@ -47,6 +63,19 @@ export function ItemDetailDialog({ item, boothId, removeLabel, onRemove, onClose
       dialogRef.current?.close()
     } finally {
       setRemoving(false)
+    }
+  }
+
+  const handleMove = async (targetWallId: string) => {
+    if (!moveOptions) {
+      return
+    }
+    setMoving(true)
+    try {
+      await moveOptions.onMove(targetWallId)
+      dialogRef.current?.close()
+    } finally {
+      setMoving(false)
     }
   }
 
@@ -80,7 +109,7 @@ export function ItemDetailDialog({ item, boothId, removeLabel, onRemove, onClose
       >
         ×
       </button>
-      {mode === 'details' ? (
+      {mode === 'details' && (
         <div className="item-detail">
           {imageUrl ? (
             <img src={imageUrl} alt={title} />
@@ -117,9 +146,34 @@ export function ItemDetailDialog({ item, boothId, removeLabel, onRemove, onClose
                 Sell
               </button>
             )}
+            {moveOptions && moveOptions.otherWalls.length > 0 && (
+              <button type="button" onClick={() => setMode('move')}>
+                Move to Another Wall
+              </button>
+            )}
           </div>
         </div>
-      ) : (
+      )}
+      {mode === 'move' && moveOptions && (
+        <div className="item-detail">
+          <h2>Move &quot;{title}&quot;</h2>
+          <ul className="item-detail__wall-list">
+            {moveOptions.otherWalls.map((wall) => (
+              <li key={wall.id}>
+                <button type="button" onClick={() => handleMove(wall.id)} disabled={moving}>
+                  {wall.fields['Wall Name'] ?? 'Untitled wall'}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="item-detail__actions">
+            <button type="button" onClick={() => setMode('details')} disabled={moving}>
+              Back
+            </button>
+          </div>
+        </div>
+      )}
+      {mode === 'sell' && (
         <form className="item-detail" onSubmit={handleSell}>
           <h2>Sell &quot;{title}&quot;</h2>
           <label>

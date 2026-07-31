@@ -5,15 +5,18 @@ import { wallDimensionToInches } from '@/features/walls/wallScale'
 import { PlacedItemNode } from '@/features/walls/PlacedItemNode'
 import type { PlacedItem } from '@/features/walls/PlacedItem'
 
-const CONTAINER_SIZE = 260
+const DEFAULT_CONTAINER_SIZE = 260
 
 interface WallCanvasProps {
   wall: Wall
   boothId: string
   placedItems: PlacedItem[]
+  /** Pixel width/height of the (square) preview. Defaults to the full card size
+   *  used in the booth's wall grid; pass a smaller value for a thumbnail. */
+  size?: number
 }
 
-export function WallCanvas({ wall, boothId, placedItems }: WallCanvasProps) {
+export function WallCanvas({ wall, boothId, placedItems, size = DEFAULT_CONTAINER_SIZE }: WallCanvasProps) {
   const fields = wall.fields
   const name = fields['Wall Name'] ?? 'Untitled wall'
   const widthInches = fields.Width
@@ -27,7 +30,12 @@ export function WallCanvas({ wall, boothId, placedItems }: WallCanvasProps) {
   if (!widthInches || !heightInches) {
     return (
       <Link to={to} className="wall-card">
-        <div className="wall-card__canvas wall-card__canvas--empty">No dimensions set</div>
+        <div
+          className="wall-card__canvas wall-card__canvas--empty"
+          style={{ width: size, height: size }}
+        >
+          No dimensions set
+        </div>
         <div className="wall-card__caption">
           <strong>{name}</strong>
         </div>
@@ -35,14 +43,14 @@ export function WallCanvas({ wall, boothId, placedItems }: WallCanvasProps) {
     )
   }
 
-  const scale = Math.min(CONTAINER_SIZE / widthInches, CONTAINER_SIZE / heightInches)
+  const scale = Math.min(size / widthInches, size / heightInches)
   const stageWidth = widthInches * scale
   const stageHeight = heightInches * scale
   const fill = fields['Wall Color']?.trim() || '#e4e4e7'
 
   return (
     <Link to={to} className="wall-card">
-      <div className="wall-card__canvas" style={{ width: CONTAINER_SIZE, height: CONTAINER_SIZE }}>
+      <div className="wall-card__canvas" style={{ width: size, height: size }}>
         <Stage width={stageWidth} height={stageHeight} listening={false}>
           <Layer>
             <Rect

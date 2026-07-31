@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import type { Item, Wall, WallAssignment } from '@shared'
 import { Breadcrumb } from '@/components/Breadcrumb'
 import { useBooths } from '@/hooks/useBooths'
 import { useWalls } from '@/hooks/useWalls'
@@ -13,6 +14,7 @@ import {
   useDeleteWallAssignment,
 } from '@/hooks/useWallAssignmentMutations'
 import { WallAssignmentCanvas } from '@/features/walls/WallAssignmentCanvas'
+import { WallCanvas } from '@/features/walls/WallCanvas'
 import { WallDimensionsEditor } from '@/features/walls/WallDimensionsEditor'
 import { WallColorPicker } from '@/features/walls/WallColorPicker'
 import { WallInventory } from '@/features/walls/WallInventory'
@@ -21,6 +23,59 @@ import type { PlacedItem } from '@/features/walls/PlacedItem'
 import { AvailableItemsTray } from '@/features/walls/AvailableItemsTray'
 import { findEmptySpot } from '@/features/walls/findEmptySpot'
 import { itemFootprintInches, wallDimensionToInches } from '@/features/walls/wallScale'
+
+const THUMBNAIL_SIZE = 120
+
+// Shared by "add item to this wall" and "move item to another wall" — finds a
+// free spot for an item on a given wall against whatever's already placed there,
+// falling back to a simple wrapping grid if the wall has no dimensions set yet
+// or nothing empty was found.
+function findSpotOnWall(
+  targetWall: Wall,
+  itemFields: Item['fields'],
+  existingAssignments: WallAssignment[],
+  itemsData: Item[],
+): { x: number; y: number } {
+  const { width: itemWidthInches, height: itemHeightInches } = itemFootprintInches(itemFields)
+  const wallWidthInches = targetWall.fields.Width
+    ? wallDimensionToInches(targetWall.fields.Width, targetWall.fields['Unit of Measure'])
+    : undefined
+  const wallHeightInches = targetWall.fields.Height
+    ? wallDimensionToInches(targetWall.fields.Height, targetWall.fields['Unit of Measure'])
+    : undefined
+
+  const spot =
+    wallWidthInches && wallHeightInches
+      ? findEmptySpot(
+          wallWidthInches,
+          wallHeightInches,
+          itemWidthInches,
+          itemHeightInches,
+          existingAssignments
+            .map((assignment) => {
+              const placedItem = itemsData.find((entry) => entry.id === assignment.fields.Painting?.[0])
+              if (!placedItem) {
+                return null
+              }
+              const footprint = itemFootprintInches(placedItem.fields)
+              return {
+                x: assignment.fields['X Position'] ?? 0,
+                y: assignment.fields['Y Position'] ?? 0,
+                width: footprint.width,
+                height: footprint.height,
+                rotationDegrees: assignment.fields['Rotation Angle'] ?? 0,
+              }
+            })
+            .filter((entry): entry is NonNullable<typeof entry> => entry !== null),
+        )
+      : null
+
+  const count = existingAssignments.length
+  return {
+    x: spot?.x ?? 1 + (count % 5) * 1.5,
+    y: spot?.y ?? 1 + Math.floor(count / 5) * 1.5,
+  }
+}
 
 export function WallDetailPage() {
   const { boothId, wallId } = useParams<{ boothId: string; wallId: string }>()
@@ -110,15 +165,20 @@ export function WallDetailPage() {
     salesData.flatMap((sale) => sale.fields['Items (Sale History Link)'] ?? []),
   )
 
+  const placedItemsForWall = (targetWallId: string): PlacedItem[] =>
+    boothAssignments
+      .filter((assignment) => assignment.fields.Wall?.[0] === targetWallId)
+      .map((assignment) => {
+        const item = itemsData.find((entry) => entry.id === assignment.fields.Painting?.[0])
+        return item ? { assignment, item, isSold: soldItemIds.has(item.id) } : null
+      })
+      .filter((entry): entry is PlacedItem => entry !== null)
+
   const thisWallAssignments = boothAssignments.filter(
     (assignment) => assignment.fields.Wall?.[0] === wallId,
   )
-  const placedItems: PlacedItem[] = thisWallAssignments
-    .map((assignment) => {
-      const item = itemsData.find((entry) => entry.id === assignment.fields.Painting?.[0])
-      return item ? { assignment, item, isSold: soldItemIds.has(item.id) } : null
-    })
-    .filter((entry): entry is PlacedItem => entry !== null)
+  const placedItems = placedItemsForWall(wallId ?? '')
+  const otherWalls = boothWalls.filter((entry) => entry.id !== wall.id)
 
   const availableItems = itemsData.filter((item) => !placedItemIdsInBooth.has(item.id))
   const detailItem = placedItems.find((entry) => entry.assignment.id === detailAssignmentId) ?? null
@@ -129,47 +189,7 @@ export function WallDetailPage() {
       return
     }
 
-    const { width: itemWidthInches, height: itemHeightInches } = itemFootprintInches(item.fields)
-    const wallWidthInches = wall.fields.Width
-      ? wallDimensionToInches(wall.fields.Width, wall.fields['Unit of Measure'])
-      : undefined
-    const wallHeightInches = wall.fields.Height
-      ? wallDimensionToInches(wall.fields.Height, wall.fields['Unit of Measure'])
-      : undefined
-
-    const spot =
-      wallWidthInches && wallHeightInches
-        ? findEmptySpot(
-            wallWidthInches,
-            wallHeightInches,
-            itemWidthInches,
-            itemHeightInches,
-            thisWallAssignments
-              .map((assignment) => {
-                const placedItem = itemsData.find(
-                  (entry) => entry.id === assignment.fields.Painting?.[0],
-                )
-                if (!placedItem) {
-                  return null
-                }
-                const footprint = itemFootprintInches(placedItem.fields)
-                return {
-                  x: assignment.fields['X Position'] ?? 0,
-                  y: assignment.fields['Y Position'] ?? 0,
-                  width: footprint.width,
-                  height: footprint.height,
-                  rotationDegrees: assignment.fields['Rotation Angle'] ?? 0,
-                }
-              })
-              .filter((entry): entry is NonNullable<typeof entry> => entry !== null),
-          )
-        : null
-
-    // Falls back to a simple wrapping grid when nothing empty was found (wall fully
-    // packed, item too big to fit anywhere, or the wall has no dimensions set yet).
-    const count = thisWallAssignments.length
-    const x = spot?.x ?? 1 + (count % 5) * 1.5
-    const y = spot?.y ?? 1 + Math.floor(count / 5) * 1.5
+    const { x, y } = findSpotOnWall(wall, item.fields, thisWallAssignments, itemsData)
 
     createAssignment.mutate({
       Assignment: `${item.fields.Title ?? 'Item'} on ${wallName}`,
@@ -179,6 +199,22 @@ export function WallDetailPage() {
       'X Position': x,
       'Y Position': y,
       'Rotation Angle': 0,
+    })
+  }
+
+  const handleMoveToWall = (assignment: WallAssignment, item: Item, targetWallId: string) => {
+    const targetWall = boothWalls.find((entry) => entry.id === targetWallId)
+    if (!targetWall) {
+      return Promise.resolve()
+    }
+    const existingOnTargetWall = boothAssignments.filter(
+      (entry) => entry.fields.Wall?.[0] === targetWallId,
+    )
+    const { x, y } = findSpotOnWall(targetWall, item.fields, existingOnTargetWall, itemsData)
+
+    return updateAssignment.mutateAsync({
+      id: assignment.id,
+      input: { Wall: [targetWallId], 'X Position': x, 'Y Position': y },
     })
   }
 
@@ -249,16 +285,35 @@ export function WallDetailPage() {
         </div>
       </div>
 
-      <WallAssignmentCanvas
-        key={wall.id}
-        wall={wall}
-        placedItems={placedItems}
-        selectedAssignmentId={selectedAssignmentId}
-        onSelect={handleCanvasSelect}
-        onMove={handleMove}
-        onTransformEnd={handleTransformEnd}
-        showGrid={showGrid}
-      />
+      <div className="wall-editor-body">
+        <WallAssignmentCanvas
+          key={wall.id}
+          wall={wall}
+          placedItems={placedItems}
+          selectedAssignmentId={selectedAssignmentId}
+          onSelect={handleCanvasSelect}
+          onMove={handleMove}
+          onTransformEnd={handleTransformEnd}
+          showGrid={showGrid}
+        />
+
+        {otherWalls.length > 0 && (
+          <aside className="wall-editor-thumbnails" aria-label="Other walls in this booth">
+            <h2>Other Walls</h2>
+            <div className="wall-editor-thumbnails__list">
+              {otherWalls.map((otherWall) => (
+                <WallCanvas
+                  key={otherWall.id}
+                  wall={otherWall}
+                  boothId={booth.id}
+                  placedItems={placedItemsForWall(otherWall.id)}
+                  size={THUMBNAIL_SIZE}
+                />
+              ))}
+            </div>
+          </aside>
+        )}
+      </div>
 
       <WallInventory
         placedItems={placedItems}
@@ -278,6 +333,11 @@ export function WallDetailPage() {
           removeLabel="Remove from wall"
           onRemove={() => deleteAssignment.mutateAsync(detailItem.assignment.id)}
           onClose={handleCloseDetail}
+          moveOptions={{
+            otherWalls,
+            onMove: (targetWallId) =>
+              handleMoveToWall(detailItem.assignment, detailItem.item, targetWallId),
+          }}
         />
       )}
     </main>
