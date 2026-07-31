@@ -31,7 +31,9 @@ export function ItemDetailDialog({
   moveOptions,
 }: ItemDetailDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
-  const [mode, setMode] = useState<'details' | 'sell' | 'move'>('details')
+  const moveMenuRef = useRef<HTMLDivElement>(null)
+  const [mode, setMode] = useState<'details' | 'sell'>('details')
+  const [showMoveMenu, setShowMoveMenu] = useState(false)
   const [salePrice, setSalePrice] = useState('')
   const [saleNotes, setSaleNotes] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -40,6 +42,19 @@ export function ItemDetailDialog({
   const [moving, setMoving] = useState(false)
 
   const createSale = useCreateSale()
+
+  useEffect(() => {
+    if (!showMoveMenu) {
+      return
+    }
+    function handleClickOutside(event: MouseEvent) {
+      if (moveMenuRef.current && !moveMenuRef.current.contains(event.target as Node)) {
+        setShowMoveMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showMoveMenu])
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -73,6 +88,7 @@ export function ItemDetailDialog({
     setMoving(true)
     try {
       await moveOptions.onMove(targetWallId)
+      setShowMoveMenu(false)
       dialogRef.current?.close()
     } finally {
       setMoving(false)
@@ -142,34 +158,38 @@ export function ItemDetailDialog({
               {removing ? 'Removing…' : removeLabel}
             </button>
             {!fields['Is Prop'] && (
-              <button type="button" onClick={() => setMode('sell')}>
-                Sell
+              <button type="button" className="item-detail__sell-button" onClick={() => setMode('sell')}>
+                $ Sell
               </button>
             )}
             {moveOptions && moveOptions.otherWalls.length > 0 && (
-              <button type="button" onClick={() => setMode('move')}>
-                Move to Another Wall
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-      {mode === 'move' && moveOptions && (
-        <div className="item-detail">
-          <h2>Move &quot;{title}&quot;</h2>
-          <ul className="item-detail__wall-list">
-            {moveOptions.otherWalls.map((wall) => (
-              <li key={wall.id}>
-                <button type="button" onClick={() => handleMove(wall.id)} disabled={moving}>
-                  {wall.fields['Wall Name'] ?? 'Untitled wall'}
+              <div className="item-detail__move-menu" ref={moveMenuRef}>
+                <button
+                  type="button"
+                  aria-haspopup="menu"
+                  aria-expanded={showMoveMenu}
+                  disabled={moving}
+                  onClick={() => setShowMoveMenu((prev) => !prev)}
+                >
+                  {moving ? 'Moving…' : 'Move to Another Wall'}
                 </button>
-              </li>
-            ))}
-          </ul>
-          <div className="item-detail__actions">
-            <button type="button" onClick={() => setMode('details')} disabled={moving}>
-              Back
-            </button>
+                {showMoveMenu && (
+                  <div className="item-detail__move-menu__dropdown" role="menu">
+                    {moveOptions.otherWalls.map((wall) => (
+                      <button
+                        key={wall.id}
+                        type="button"
+                        role="menuitem"
+                        disabled={moving}
+                        onClick={() => handleMove(wall.id)}
+                      >
+                        {wall.fields['Wall Name'] ?? 'Untitled wall'}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
