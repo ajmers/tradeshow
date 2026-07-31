@@ -8,12 +8,16 @@ import {
   uploadItemPhoto,
 } from '@/services/items.service'
 import { requireAuth } from '@/middleware/auth'
+import { countHit } from '@/lib/requestCounters'
 import type { AppEnv } from '@/lib/hono'
 
 export const itemsRoute = new Hono<AppEnv>()
   .use('*', requireAuth)
   .get('/', async (c) => {
-    const items = await listItems(c.get('airtableBaseId'))
+    const baseId = c.get('airtableBaseId')
+    const hits = countHit('GET /items', baseId)
+    console.log(`[GET /items] hit #${hits} for base ${baseId}`)
+    const items = await listItems(baseId)
     return c.json(items)
   })
   .post('/', async (c) => {
