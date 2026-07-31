@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { htmlToMarkdown, markdownToHtml } from '@/features/labelPrinter/richTextMarkdown'
 
 interface InlineRichTextEditorProps {
@@ -7,12 +7,12 @@ interface InlineRichTextEditorProps {
   onCancel: () => void
 }
 
-// Keeps the mousedown from blurring the contentEditable (which would collapse
-// the text selection) before the toolbar button's click applies formatting to it.
-function preventBlur(event: MouseEvent) {
-  event.preventDefault()
-}
-
+// No visible formatting toolbar by design — this is meant to feel like
+// editing plain text in a word processor, not filling out a form. The
+// browser's own Cmd/Ctrl+B and Cmd/Ctrl+I shortcuts still work in a
+// contentEditable region without any code here, and richTextMarkdown's
+// htmlToMarkdown already knows how to save whatever <strong>/<em> that
+// produces — that capability isn't gone, just not surfaced as buttons.
 export function InlineRichTextEditor({ value, onSave, onCancel }: InlineRichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null)
   const [saving, setSaving] = useState(false)
@@ -69,32 +69,6 @@ export function InlineRichTextEditor({ value, onSave, onCancel }: InlineRichText
 
   return (
     <div className="inline-rich-editor">
-      <div className="inline-rich-editor__toolbar">
-        <button
-          type="button"
-          onMouseDown={preventBlur}
-          onClick={() => document.execCommand('bold')}
-          aria-label="Bold"
-        >
-          <strong>B</strong>
-        </button>
-        <button
-          type="button"
-          onMouseDown={preventBlur}
-          onClick={() => document.execCommand('italic')}
-          aria-label="Italic"
-        >
-          <em>I</em>
-        </button>
-        <button
-          type="button"
-          onMouseDown={preventBlur}
-          onClick={() => document.execCommand('insertUnorderedList')}
-          aria-label="Bulleted list"
-        >
-          •
-        </button>
-      </div>
       <div
         ref={editorRef}
         className="inline-rich-editor__content"

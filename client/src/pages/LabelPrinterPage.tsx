@@ -126,13 +126,15 @@ export function LabelPrinterPage() {
 
   // Clears any booth/wall filter — a brand-new item isn't assigned to a wall
   // yet, so it would otherwise be filtered straight out of view — and selects
-  // just the new item, so its label is the one thing shown, ready to refine
-  // with the pencil-icon editors.
+  // just the new item, so it's the one thing shown in the sheet behind the
+  // dialog once the dialog itself closes. Doesn't close the dialog — it fires
+  // right when the Item is created, and NewLabelItemDialog stays open past
+  // that point to show the label for editing; only its own "Done" button
+  // (via onClose) actually dismisses it.
   function handleItemCreated(item: Item) {
     setBoothFilter('')
     setWallFilter('')
     setSelectedIds(new Set([item.id]))
-    setShowNewLabel(false)
   }
 
   const locationItemIds = itemIdsForLocation(boothFilter, wallFilter)
