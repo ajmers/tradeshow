@@ -5,6 +5,7 @@ import { Stage, Layer, Rect, Group, Transformer } from 'react-konva'
 import type { Wall } from '@shared'
 import { wallDimensionToInches } from '@/features/walls/wallScale'
 import { PlacedItemNode } from '@/features/walls/PlacedItemNode'
+import { LabelNode } from '@/features/walls/LabelNode'
 import { WallGrid } from '@/features/walls/WallGrid'
 import type { PlacedItem } from '@/features/walls/PlacedItem'
 
@@ -41,6 +42,7 @@ interface WallAssignmentCanvasProps {
   selectedAssignmentId: string | null
   onSelect: (assignmentId: string | null) => void
   onMove: (assignmentId: string, xInches: number, yInches: number) => void
+  onMoveLabel: (assignmentId: string, xInches: number, yInches: number) => void
   onTransformEnd: (
     assignmentId: string,
     xInches: number,
@@ -57,6 +59,7 @@ export function WallAssignmentCanvas({
   selectedAssignmentId,
   onSelect,
   onMove,
+  onMoveLabel,
   onTransformEnd,
   showGrid = true,
   onToggleGrid,
@@ -276,6 +279,16 @@ export function WallAssignmentCanvas({
                       nodeRefs.current.delete(id)
                     }
                   }}
+                />
+              ))}
+              {placedItems.map(({ assignment, item }) => (
+                <LabelNode
+                  key={`label-${assignment.id}`}
+                  assignment={assignment}
+                  item={item}
+                  scale={scale}
+                  interactive
+                  onMove={onMoveLabel}
                 />
               ))}
             </Group>

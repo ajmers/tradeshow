@@ -8,6 +8,11 @@ export const wallAssignmentFieldsSchema = z.object({
   'X Position': z.number().optional(),
   'Y Position': z.number().optional(),
   'Rotation Angle': z.number().optional(),
+  // Position of the item's on-wall label, independent of the item's own X/Y —
+  // unset until the user first drags the label away from its computed default
+  // spot (see defaultLabelPosition in the client's labelPlacement.ts).
+  'Label X Position': z.number().optional(),
+  'Label Y Position': z.number().optional(),
   Notes: z.string().optional(),
   Order: z.number().optional(),
 })
@@ -35,6 +40,8 @@ export const updateWallAssignmentInputSchema = z.object({
   'X Position': z.number().optional(),
   'Y Position': z.number().optional(),
   'Rotation Angle': z.number().optional(),
+  'Label X Position': z.number().optional(),
+  'Label Y Position': z.number().optional(),
 })
 
 export type WallAssignmentFields = z.infer<typeof wallAssignmentFieldsSchema>

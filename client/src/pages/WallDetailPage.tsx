@@ -361,6 +361,13 @@ export function WallDetailPage() {
     })
   }
 
+  const handleMoveLabel = (assignmentId: string, xInches: number, yInches: number) => {
+    updateAssignment.mutate({
+      id: assignmentId,
+      input: { 'Label X Position': xInches, 'Label Y Position': yInches },
+    })
+  }
+
   const handleTransformEnd = (
     assignmentId: string,
     xInches: number,
@@ -511,6 +518,7 @@ export function WallDetailPage() {
                 selectedAssignmentId={selectedAssignmentId}
                 onSelect={handleCanvasSelect}
                 onMove={handleMove}
+                onMoveLabel={handleMoveLabel}
                 onTransformEnd={handleTransformEnd}
                 showGrid={showGrid}
                 onToggleGrid={() => setShowGrid((prev) => !prev)}
