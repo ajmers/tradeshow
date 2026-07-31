@@ -5,6 +5,7 @@ import { useBaseInfo } from '@/hooks/useBaseInfo'
 import { useLabelLogo } from '@/hooks/useLabelLogo'
 import { HealthStatus } from '@/features/health/HealthStatus'
 import { SignOutButton } from '@/features/auth/SignOutButton'
+import { UserMenu } from '@/features/auth/UserMenu'
 
 function boothIdFromPathname(pathname: string): string | undefined {
   const boothDetail = matchPath('/booth-planner/:boothId', pathname)
@@ -126,10 +127,7 @@ export function AppLayout() {
           )}
           <div className="app-nav__footer">
             {baseInfo?.name && <p className="app-nav__base">{baseInfo.name}</p>}
-            {session?.user.email && <p className="app-nav__email">{session.user.email}</p>}
-            <NavLink to="/settings" className="app-nav__settings-link">
-              Settings
-            </NavLink>
+            {session?.user.email && <UserMenu email={session.user.email} />}
             <SignOutButton />
           </div>
         </div>
