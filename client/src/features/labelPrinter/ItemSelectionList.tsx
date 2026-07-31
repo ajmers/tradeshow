@@ -30,9 +30,12 @@ export function ItemSelectionList({ items, selectedIds, onChange }: ItemSelectio
     onChange(new Set([...selectedIds, ...visibleItems.map((item) => item.id)]))
   }
 
-  function clearAllVisible() {
-    const visibleIds = new Set(visibleItems.map((item) => item.id))
-    onChange(new Set([...selectedIds].filter((id) => !visibleIds.has(id))))
+  // Unlike "Select all" (deliberately scoped to what's visible, so search
+  // doesn't silently pull in items you can't currently see), "Clear" clears
+  // the whole selection — a search filter narrowing the list shouldn't leave
+  // hidden items still selected behind it.
+  function clearAll() {
+    onChange(new Set())
   }
 
   return (
@@ -48,7 +51,7 @@ export function ItemSelectionList({ items, selectedIds, onChange }: ItemSelectio
         <button type="button" onClick={selectAllVisible}>
           Select all
         </button>
-        <button type="button" onClick={clearAllVisible}>
+        <button type="button" onClick={clearAll}>
           Clear
         </button>
         <span className="label-printer-items__count">{selectedIds.size} selected</span>

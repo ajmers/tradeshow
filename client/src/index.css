@@ -1524,6 +1524,12 @@ dialog.item-detail-dialog::backdrop {
   margin: 1.5rem 0 0.75rem;
 }
 
+.label-printer-controls__divider {
+  margin: 1.25rem 0;
+  border: none;
+  border-top: 1px solid light-dark(#d4d4d8, #3f3f46);
+}
+
 .label-printer-print-button {
   position: fixed;
   bottom: 1.5rem;

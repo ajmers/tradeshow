@@ -163,7 +163,7 @@ export function LabelPrinterPage() {
           New Label
         </button>
 
-        <LabelPrinterConfigPanel config={config} onChange={setConfig} />
+        <hr className="label-printer-controls__divider" />
 
         <fieldset className="label-printer-filters">
           <legend>Filters</legend>
@@ -231,6 +231,8 @@ export function LabelPrinterPage() {
             )}
           </div>
         </fieldset>
+
+        <LabelPrinterConfigPanel config={config} onChange={setConfig} />
 
         <ItemSelectionList items={filteredItems} selectedIds={selectedIds} onChange={setSelectedIds} />
 
