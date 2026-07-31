@@ -1780,4 +1780,26 @@ dialog.item-detail-dialog::backdrop {
   .label-sheet__group-title {
     display: none;
   }
+
+  /* Wall print view: everything on the wall detail page except the canvas
+     itself -- breadcrumb, toolbar, other-walls thumbnails, the fixed
+     inventory panel, the available-items tray, and any open item dialog. */
+  .wall-detail-page .breadcrumb,
+  .wall-detail-page .wall-editor-toolbar,
+  .wall-detail-page .wall-editor-zoom,
+  .wall-detail-page .wall-editor-thumbnails,
+  .wall-detail-page .wall-inventory,
+  .wall-detail-page > section,
+  dialog.item-dialog {
+    display: none !important;
+  }
+
+  .wall-detail-page {
+    padding-right: 0;
+  }
+
+  .wall-editor-canvas {
+    overflow: visible;
+    max-width: none;
+  }
 }

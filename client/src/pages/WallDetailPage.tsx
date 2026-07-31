@@ -25,6 +25,48 @@ import { findEmptySpot } from '@/features/walls/findEmptySpot'
 import { itemFootprintInches, wallDimensionToInches } from '@/features/walls/wallScale'
 
 const THUMBNAIL_SIZE = 120
+// Matches the shared @page rule's content width (8.5in letter - 2 * 0.65in
+// margins = 7.2in), converted at the CSS-spec-standard 96px/in reference
+// pixel that browsers use consistently for absolute units in both screen
+// and print media.
+const PRINT_TARGET_WIDTH_PX = 691
+
+// The canvas's on-screen size comes from Konva/react-konva, which sets fixed
+// pixel width/height (via inline style) on both its wrapping .konvajs-content
+// div and each layer's own <canvas> element — CSS alone (even in @media
+// print) can't override those without fighting inline styles, and neither
+// changes the *rendered pixels*, just how large they're displayed. This
+// scales all of them up to fill the print page's width, then restores the
+// original sizes once the print dialog closes (window.print() blocks until
+// then in every browser this app supports).
+function printWallCanvas() {
+  const content = document.querySelector<HTMLElement>('.wall-editor-canvas .konvajs-content')
+  if (!content) {
+    window.print()
+    return
+  }
+  const canvases = [...content.querySelectorAll('canvas')]
+  const originalSizes = [content, ...canvases].map((el) => ({
+    el,
+    width: el.style.width,
+    height: el.style.height,
+  }))
+
+  const scale = PRINT_TARGET_WIDTH_PX / content.offsetWidth
+  const targetWidth = `${content.offsetWidth * scale}px`
+  const targetHeight = `${content.offsetHeight * scale}px`
+  for (const { el } of originalSizes) {
+    el.style.width = targetWidth
+    el.style.height = targetHeight
+  }
+
+  window.print()
+
+  for (const { el, width, height } of originalSizes) {
+    el.style.width = width
+    el.style.height = height
+  }
+}
 
 // Shared by "add item to this wall" and "move item to another wall" — finds a
 // free spot for an item on a given wall against whatever's already placed there,
@@ -279,6 +321,9 @@ export function WallDetailPage() {
           <WallColorPicker wall={wall} boothWalls={boothWalls} />
           <button type="button" onClick={() => setShowGrid((prev) => !prev)}>
             {showGrid ? 'Hide gridlines' : 'Show gridlines'}
+          </button>
+          <button type="button" onClick={printWallCanvas}>
+            Print Wall
           </button>
           <button type="button" onClick={handleDeleteWall} disabled={deleteWall.isPending}>
             {deleteWall.isPending ? 'Deleting…' : 'Delete Wall'}
