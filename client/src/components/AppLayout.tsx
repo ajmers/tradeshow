@@ -7,6 +7,56 @@ import { HealthStatus } from '@/features/health/HealthStatus'
 import { SignOutButton } from '@/features/auth/SignOutButton'
 import { UserMenu } from '@/features/auth/UserMenu'
 
+// Kept simple (no label/tooltip prop) since these only ever appear paired with
+// the nav item's own text — collapsed mode relies on the link's title attribute
+// for a label instead.
+function InventoryIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+      <rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1" />
+      <rect x="13" y="3.5" width="7.5" height="7.5" rx="1" />
+      <rect x="3.5" y="13" width="7.5" height="7.5" rx="1" />
+      <rect x="13" y="13" width="7.5" height="7.5" rx="1" />
+    </svg>
+  )
+}
+
+function BoothPlannerIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+      <rect x="3.5" y="3.5" width="17" height="17" rx="1.5" />
+      <path d="M3.5 9.5h17M9 9.5V20" />
+    </svg>
+  )
+}
+
+function LabelPrinterIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+      <path d="M20 12.5L11.5 21 3 12.5V4h8.5L20 12.5z" />
+      <circle cx="7.5" cy="8.5" r="1.2" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+const NAV_COLLAPSED_STORAGE_KEY = 'tradeshow:navCollapsed'
+
+function readStoredNavCollapsed(): boolean {
+  try {
+    return localStorage.getItem(NAV_COLLAPSED_STORAGE_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function writeStoredNavCollapsed(collapsed: boolean): void {
+  try {
+    localStorage.setItem(NAV_COLLAPSED_STORAGE_KEY, collapsed ? '1' : '0')
+  } catch {
+    // Storage full/unavailable — the collapsed state just won't persist across reloads.
+  }
+}
+
 function boothIdFromPathname(pathname: string): string | undefined {
   const boothDetail = matchPath('/booth-planner/:boothId', pathname)
   const wallDetail = matchPath('/booth-planner/:boothId/walls/:wallId', pathname)
@@ -45,9 +95,9 @@ function writeStoredBoothId(userId: string | undefined, boothId: string): void {
 // straight back into it — coming back after visiting an unrelated page lands on the
 // same booth instead of resetting to the booth list. Persisted to localStorage
 // (per user) so it also survives a full page reload, not just in-app navigation.
-// Note this is just a shortcut, not a trust boundary: BoothDetailPage/WallDetailPage
-// independently verify the booth actually belongs to the signed-in user and redirect
-// home if not, so a stale or foreign id here can't land anyone on someone else's page.
+// Note this is just a shortcut, not a trust boundary: WallDetailPage independently
+// verifies the booth actually belongs to the signed-in user and redirects home if
+// not, so a stale or foreign id here can't land anyone on someone else's page.
 // Updated during render (React's documented "adjusting state during render" pattern)
 // rather than in an effect, since it only needs to react to the pathname the
 // component already saw.
@@ -75,62 +125,85 @@ export function AppLayout() {
   const { data: baseInfo } = useBaseInfo()
   const { data: labelLogo } = useLabelLogo()
   const lastBoothId = useLastBoothId(session?.user.id)
+  const [collapsed, setCollapsed] = useState(readStoredNavCollapsed)
 
   // Defaults to enabled while base info is still loading, so the link doesn't flash
   // away and back once it resolves (it's normally already cached before this renders).
   const labelPrinterEnabled = baseInfo?.featureFlags.labelPrinter ?? true
 
   const navItems = [
-    { to: '/', label: 'Inventory', end: true },
+    { to: '/', label: 'Inventory', end: true, Icon: InventoryIcon },
     {
       to: lastBoothId ? `/booth-planner/${lastBoothId}` : '/booth-planner',
       label: 'Booth Planner',
       end: false,
+      Icon: BoothPlannerIcon,
     },
-    ...(labelPrinterEnabled ? [{ to: '/label-printer', label: 'Label Printer', end: false }] : []),
+    ...(labelPrinterEnabled
+      ? [{ to: '/label-printer', label: 'Label Printer', end: false, Icon: LabelPrinterIcon }]
+      : []),
   ]
+
+  function toggleCollapsed() {
+    setCollapsed((prev) => {
+      const next = !prev
+      writeStoredNavCollapsed(next)
+      return next
+    })
+  }
 
   return (
     <div className="app-layout">
-      <nav className="app-nav">
+      <nav className={collapsed ? 'app-nav app-nav--collapsed' : 'app-nav'}>
         <div className="app-nav__brand">
           <img src="/logo.png" alt="" className="app-nav__logo" />
-          <span className="app-nav__wordmark">Tradeshow</span>
+          {!collapsed && <span className="app-nav__wordmark">Tradeshow</span>}
         </div>
+        <button
+          type="button"
+          className="app-nav__collapse-toggle"
+          onClick={toggleCollapsed}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {collapsed ? '»' : '«'}
+        </button>
         <ul>
           {navItems.map((item) => (
             <li key={item.to}>
-              <NavLink to={item.to} end={item.end}>
-                {item.label}
+              <NavLink to={item.to} end={item.end} title={collapsed ? item.label : undefined}>
+                <item.Icon />
+                {!collapsed && <span>{item.label}</span>}
               </NavLink>
             </li>
           ))}
         </ul>
-        <div className="app-nav__bottom">
-          {baseInfo?.isAdmin && (
-            <ul className="app-nav__admin">
-              <li>
-                <NavLink to="/admin">Admin</NavLink>
-              </li>
-            </ul>
-          )}
-          {baseInfo?.isAdmin ? (
-            <div className="app-nav__status">
-              <HealthStatus />
-            </div>
-          ) : (
-            labelLogo && (
+        {!collapsed && (
+          <div className="app-nav__bottom">
+            {baseInfo?.isAdmin && (
+              <ul className="app-nav__admin">
+                <li>
+                  <NavLink to="/admin">Admin</NavLink>
+                </li>
+              </ul>
+            )}
+            {baseInfo?.isAdmin ? (
               <div className="app-nav__status">
-                <img src={labelLogo} alt="" className="app-nav__status-logo" />
+                <HealthStatus />
               </div>
-            )
-          )}
-          <div className="app-nav__footer">
-            {baseInfo?.name && <p className="app-nav__base">{baseInfo.name}</p>}
-            {session?.user.email && <UserMenu email={session.user.email} />}
-            <SignOutButton />
+            ) : (
+              labelLogo && (
+                <div className="app-nav__status">
+                  <img src={labelLogo} alt="" className="app-nav__status-logo" />
+                </div>
+              )
+            )}
+            <div className="app-nav__footer">
+              {baseInfo?.name && <p className="app-nav__base">{baseInfo.name}</p>}
+              {session?.user.email && <UserMenu email={session.user.email} />}
+              <SignOutButton />
+            </div>
           </div>
-        </div>
+        )}
       </nav>
       <div className="app-content">
         <Outlet />

@@ -14,9 +14,18 @@ interface WallCanvasProps {
   /** Pixel width/height of the (square) preview. Defaults to the full card size
    *  used in the booth's wall grid; pass a smaller value for a thumbnail. */
   size?: number
+  /** Highlights this card as the one currently being edited, e.g. in the "All
+   *  Walls" sidebar. */
+  active?: boolean
 }
 
-export function WallCanvas({ wall, boothId, placedItems, size = DEFAULT_CONTAINER_SIZE }: WallCanvasProps) {
+export function WallCanvas({
+  wall,
+  boothId,
+  placedItems,
+  size = DEFAULT_CONTAINER_SIZE,
+  active = false,
+}: WallCanvasProps) {
   const fields = wall.fields
   const name = fields['Wall Name'] ?? 'Untitled wall'
   const widthInches = fields.Width
@@ -26,10 +35,11 @@ export function WallCanvas({ wall, boothId, placedItems, size = DEFAULT_CONTAINE
     ? wallDimensionToInches(fields.Height, fields['Unit of Measure'])
     : undefined
   const to = `/booth-planner/${boothId}/walls/${wall.id}`
+  const className = active ? 'wall-card wall-card--active' : 'wall-card'
 
   if (!widthInches || !heightInches) {
     return (
-      <Link to={to} className="wall-card">
+      <Link to={to} className={className}>
         <div
           className="wall-card__canvas wall-card__canvas--empty"
           style={{ width: size, height: size }}
@@ -49,7 +59,7 @@ export function WallCanvas({ wall, boothId, placedItems, size = DEFAULT_CONTAINE
   const fill = fields['Wall Color']?.trim() || '#e4e4e7'
 
   return (
-    <Link to={to} className="wall-card">
+    <Link to={to} className={className}>
       <div className="wall-card__canvas" style={{ width: size, height: size }}>
         <Stage width={stageWidth} height={stageHeight} listening={false}>
           <Layer>

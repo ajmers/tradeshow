@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import type { Item, Wall, WallAssignment } from '@shared'
 import { Breadcrumb } from '@/components/Breadcrumb'
@@ -7,6 +7,8 @@ import { useWalls } from '@/hooks/useWalls'
 import { useItems } from '@/hooks/useItems'
 import { useWallAssignments } from '@/hooks/useWallAssignments'
 import { useSales } from '@/hooks/useSales'
+import { useBaseInfo } from '@/hooks/useBaseInfo'
+import { useDeleteBooth } from '@/hooks/useBoothMutations'
 import { useDeleteWall } from '@/hooks/useWallMutations'
 import {
   useCreateWallAssignment,
@@ -15,16 +17,19 @@ import {
 } from '@/hooks/useWallAssignmentMutations'
 import { WallAssignmentCanvas } from '@/features/walls/WallAssignmentCanvas'
 import { WallCanvas } from '@/features/walls/WallCanvas'
+import { WallFormDialog } from '@/features/walls/WallFormDialog'
 import { WallDimensionsEditor } from '@/features/walls/WallDimensionsEditor'
 import { WallColorPicker } from '@/features/walls/WallColorPicker'
 import { WallInventory } from '@/features/walls/WallInventory'
 import { ItemDetailDialog } from '@/features/walls/ItemDetailDialog'
+import { Booth3DView } from '@/features/walls/Booth3DView'
+import { BoothReportDialog } from '@/features/booths/BoothReportDialog'
 import type { PlacedItem } from '@/features/walls/PlacedItem'
 import { AvailableItemsTray } from '@/features/walls/AvailableItemsTray'
 import { findEmptySpot } from '@/features/walls/findEmptySpot'
 import { itemFootprintInches, wallDimensionToInches } from '@/features/walls/wallScale'
 
-const THUMBNAIL_SIZE = 120
+const THUMBNAIL_SIZE = 110
 // Matches the shared @page rule's content width (8.5in letter - 2 * 0.65in
 // margins = 7.2in), converted at the CSS-spec-standard 96px/in reference
 // pixel that browsers use consistently for absolute units in both screen
@@ -119,14 +124,82 @@ function findSpotOnWall(
   }
 }
 
+type ViewMode = '2d' | '3d'
+
+function BoothActionsMenu({
+  onRunReport,
+  onDelete,
+}: {
+  onRunReport: () => void
+  onDelete: () => void
+}) {
+  const [open, setOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [open])
+
+  return (
+    <div className="booth-actions-menu" ref={menuRef}>
+      <button
+        type="button"
+        className="booth-actions-menu__trigger"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Booth actions"
+        onClick={() => setOpen((prev) => !prev)}
+      >
+        ⋯
+      </button>
+      {open && (
+        <div className="booth-actions-menu__dropdown" role="menu">
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false)
+              onRunReport()
+            }}
+          >
+            Run Booth Report
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            className="booth-actions-menu__delete"
+            onClick={() => {
+              setOpen(false)
+              onDelete()
+            }}
+          >
+            Delete Booth
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function WallDetailPage() {
-  const { boothId, wallId } = useParams<{ boothId: string; wallId: string }>()
+  const { boothId, wallId } = useParams<{ boothId: string; wallId?: string }>()
   const navigate = useNavigate()
   const booths = useBooths()
   const walls = useWalls()
   const items = useItems()
   const wallAssignments = useWallAssignments()
   const sales = useSales()
+  const baseInfo = useBaseInfo()
+  const deleteBooth = useDeleteBooth()
   const createAssignment = useCreateWallAssignment()
   const updateAssignment = useUpdateWallAssignment()
   const deleteAssignment = useDeleteWallAssignment()
@@ -134,6 +207,9 @@ export function WallDetailPage() {
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null)
   const [detailAssignmentId, setDetailAssignmentId] = useState<string | null>(null)
   const [showGrid, setShowGrid] = useState(true)
+  const [showAddWall, setShowAddWall] = useState(false)
+  const [showReport, setShowReport] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>('2d')
   const [inventoryOpen, setInventoryOpen] = useState(true)
 
   // Delete/Backspace removes the selected item directly from the canvas. Only active
@@ -174,27 +250,35 @@ export function WallDetailPage() {
   const salesData = sales.data ?? []
 
   const booth = boothsData.find((entry) => entry.id === boothId)
-  const wall = wallsData.find((entry) => entry.id === wallId)
 
-  if (!booth || !wall) {
-    // Most often a stale wall/booth URL left over from a different user's session
-    // on this browser (or a deleted booth/wall) — either way, there's nothing
-    // useful to show here, so bounce straight back to the home page.
+  if (!booth) {
+    // Most often a stale booth URL left over from a different user's session on
+    // this browser (or a deleted booth) — either way, there's nothing useful to
+    // show here, so bounce straight back to the home page instead of a dead end.
     return <Navigate to="/" replace />
   }
 
   const boothName = booth.fields['Booth Name'] ?? 'Untitled booth'
-  const wallName = wall.fields['Wall Name'] ?? 'Untitled wall'
-
-  const handleDeleteWall = () => {
-    if (!window.confirm(`Delete "${wallName}"? This also deletes every item placement on it. This cannot be undone.`)) {
-      return
-    }
-    deleteWall.mutate(wall.id, { onSuccess: () => navigate(`/booth-planner/${booth.id}`) })
-  }
-
   const boothWallIds = new Set(booth.fields.Walls ?? [])
   const boothWalls = wallsData.filter((entry) => boothWallIds.has(entry.id))
+
+  // Landing on the bare booth URL (no wall in the path) — jump straight to the
+  // most recently added wall instead of an intermediate "pick a wall" screen.
+  // Skipped once the booth has no walls at all, since there's nowhere to send it.
+  if (!wallId && boothWalls.length > 0) {
+    const latestWall = boothWalls.reduce((latest, entry) =>
+      (entry.createdTime ?? '') > (latest.createdTime ?? '') ? entry : latest,
+    )
+    return <Navigate to={`/booth-planner/${booth.id}/walls/${latestWall.id}`} replace />
+  }
+
+  const wall = wallId ? wallsData.find((entry) => entry.id === wallId) : undefined
+
+  if (wallId && !wall) {
+    // Stale/foreign wall id — same reasoning as the booth check above.
+    return <Navigate to="/" replace />
+  }
+
   const boothAssignments = wallAssignmentsData.filter((assignment) =>
     boothWallIds.has(assignment.fields.Wall?.[0] ?? ''),
   )
@@ -203,7 +287,6 @@ export function WallDetailPage() {
       .map((assignment) => assignment.fields.Painting?.[0])
       .filter((id): id is string => Boolean(id)),
   )
-
   const soldItemIds = new Set(
     salesData.flatMap((sale) => sale.fields['Items (Sale History Link)'] ?? []),
   )
@@ -217,16 +300,48 @@ export function WallDetailPage() {
       })
       .filter((entry): entry is PlacedItem => entry !== null)
 
-  const thisWallAssignments = boothAssignments.filter(
-    (assignment) => assignment.fields.Wall?.[0] === wallId,
-  )
-  const placedItems = placedItemsForWall(wallId ?? '')
-  const otherWalls = boothWalls.filter((entry) => entry.id !== wall.id)
+  const thisWallAssignments = wall
+    ? boothAssignments.filter((assignment) => assignment.fields.Wall?.[0] === wall.id)
+    : []
+  const placedItems = wall ? placedItemsForWall(wall.id) : []
+  const otherWalls = wall ? boothWalls.filter((entry) => entry.id !== wall.id) : boothWalls
 
   const availableItems = itemsData.filter((item) => !placedItemIdsInBooth.has(item.id))
   const detailItem = placedItems.find((entry) => entry.assignment.id === detailAssignmentId) ?? null
 
+  const booth3dEnabled = baseInfo.data?.featureFlags.boothPlanner3d ?? true
+
+  const handleDeleteBooth = () => {
+    if (
+      !window.confirm(
+        `Delete "${boothName}"? This also deletes every wall and item placement in it. This cannot be undone.`,
+      )
+    ) {
+      return
+    }
+    deleteBooth.mutate(booth.id, { onSuccess: () => navigate('/booth-planner') })
+  }
+
+  const handleDeleteWall = () => {
+    if (!wall) {
+      return
+    }
+    const wallName = wall.fields['Wall Name'] ?? 'Untitled wall'
+    if (!window.confirm(`Delete "${wallName}"? This also deletes every item placement on it. This cannot be undone.`)) {
+      return
+    }
+    deleteWall.mutate(wall.id, {
+      onSuccess: () => {
+        const next = otherWalls[0]
+        navigate(next ? `/booth-planner/${booth.id}/walls/${next.id}` : `/booth-planner/${booth.id}`)
+      },
+    })
+  }
+
   const handleAddItem = (itemId: string) => {
+    if (!wall) {
+      return
+    }
     const item = itemsData.find((entry) => entry.id === itemId)
     if (!item) {
       return
@@ -235,7 +350,7 @@ export function WallDetailPage() {
     const { x, y } = findSpotOnWall(wall, item.fields, thisWallAssignments, itemsData)
 
     createAssignment.mutate({
-      Assignment: `${item.fields.Title ?? 'Item'} on ${wallName}`,
+      Assignment: `${item.fields.Title ?? 'Item'} on ${wall.fields['Wall Name'] ?? 'wall'}`,
       Wall: [wall.id],
       Painting: [item.id],
       Booth: [booth.id],
@@ -305,74 +420,133 @@ export function WallDetailPage() {
   return (
     <main className={inventoryOpen ? 'wall-detail-page' : 'wall-detail-page wall-detail-page--inventory-collapsed'}>
       <Breadcrumb
-        items={[
-          { label: 'Booth Planner', to: '/booth-planner' },
-          { label: boothName, to: `/booth-planner/${booth.id}` },
-          { label: wallName },
-        ]}
+        items={
+          wall
+            ? [
+                { label: 'Booth Planner', to: '/booth-planner' },
+                { label: boothName, to: `/booth-planner/${booth.id}` },
+                { label: wall.fields['Wall Name'] ?? 'Untitled wall' },
+              ]
+            : [{ label: 'Booth Planner', to: '/booth-planner' }, { label: boothName }]
+        }
       />
 
-      <div className="wall-editor-toolbar">
-        <div>
-          <h1>{wallName}</h1>
-          <WallDimensionsEditor wall={wall} key={wall.id} />
+      <div className="page-toolbar page-toolbar--booth">
+        <div className="page-toolbar__title">
+          <div>
+            <p className="wall-editor-booth-label">{boothName}</p>
+            <h1>{wall ? (wall.fields['Wall Name'] ?? 'Untitled wall') : 'No walls yet'}</h1>
+            {wall && viewMode === '2d' && <WallDimensionsEditor wall={wall} key={wall.id} />}
+          </div>
+          <BoothActionsMenu onRunReport={() => setShowReport(true)} onDelete={handleDeleteBooth} />
         </div>
-        <div className="wall-editor-toolbar__controls">
-          <WallColorPicker wall={wall} boothWalls={boothWalls} />
-          <button type="button" onClick={() => setShowGrid((prev) => !prev)}>
-            {showGrid ? 'Hide gridlines' : 'Show gridlines'}
-          </button>
-          <button type="button" onClick={printWallCanvas}>
-            Print Wall
-          </button>
-          <button type="button" onClick={handleDeleteWall} disabled={deleteWall.isPending}>
-            {deleteWall.isPending ? 'Deleting…' : 'Delete Wall'}
-          </button>
-        </div>
-      </div>
-
-      <div className="wall-editor-body">
-        <WallAssignmentCanvas
-          key={wall.id}
-          wall={wall}
-          placedItems={placedItems}
-          selectedAssignmentId={selectedAssignmentId}
-          onSelect={handleCanvasSelect}
-          onMove={handleMove}
-          onTransformEnd={handleTransformEnd}
-          showGrid={showGrid}
-        />
-
-        {otherWalls.length > 0 && (
-          <aside className="wall-editor-thumbnails" aria-label="Other walls in this booth">
-            <h2>Other Walls</h2>
-            <div className="wall-editor-thumbnails__list">
-              {otherWalls.map((otherWall) => (
-                <WallCanvas
-                  key={otherWall.id}
-                  wall={otherWall}
-                  boothId={booth.id}
-                  placedItems={placedItemsForWall(otherWall.id)}
-                  size={THUMBNAIL_SIZE}
-                />
-              ))}
-            </div>
-          </aside>
+        {booth3dEnabled && (
+          <div className="view-toggle" role="group" aria-label="View mode">
+            <button
+              type="button"
+              className={`view-toggle__button${viewMode === '2d' ? ' view-toggle__button--active' : ''}`}
+              aria-pressed={viewMode === '2d'}
+              onClick={() => setViewMode('2d')}
+            >
+              2D
+            </button>
+            <button
+              type="button"
+              className={`view-toggle__button${viewMode === '3d' ? ' view-toggle__button--active' : ''}`}
+              aria-pressed={viewMode === '3d'}
+              onClick={() => setViewMode('3d')}
+            >
+              3D
+            </button>
+          </div>
         )}
       </div>
 
-      <WallInventory
-        placedItems={placedItems}
-        selectedAssignmentId={selectedAssignmentId}
-        onSelect={handleListSelect}
-        isOpen={inventoryOpen}
-        onToggle={() => setInventoryOpen((prev) => !prev)}
-      />
+      {booth3dEnabled && viewMode === '3d' ? (
+        <Booth3DView booth={booth} />
+      ) : (
+        <>
+          {wall && (
+            <div className="wall-editor-toolbar__controls">
+              <WallColorPicker wall={wall} boothWalls={boothWalls} />
+              <button type="button" onClick={() => setShowGrid((prev) => !prev)}>
+                {showGrid ? 'Hide gridlines' : 'Show gridlines'}
+              </button>
+              <button type="button" onClick={printWallCanvas}>
+                Print Wall
+              </button>
+              <button type="button" onClick={handleDeleteWall} disabled={deleteWall.isPending}>
+                {deleteWall.isPending ? 'Deleting…' : 'Delete Wall'}
+              </button>
+            </div>
+          )}
 
-      <section>
-        <h2>Available items</h2>
-        <AvailableItemsTray items={availableItems} onSelect={handleAddItem} />
-      </section>
+          <div className="wall-editor-body">
+            <aside className="wall-editor-thumbnails" aria-label="All walls in this booth">
+              <div className="wall-editor-thumbnails__header">
+                <h2>All Walls</h2>
+                <button type="button" onClick={() => setShowAddWall(true)}>
+                  Add Wall
+                </button>
+              </div>
+              <div className="wall-editor-thumbnails__list">
+                {boothWalls.map((boothWall) => (
+                  <WallCanvas
+                    key={boothWall.id}
+                    wall={boothWall}
+                    boothId={booth.id}
+                    placedItems={placedItemsForWall(boothWall.id)}
+                    size={THUMBNAIL_SIZE}
+                    active={wall?.id === boothWall.id}
+                  />
+                ))}
+                {boothWalls.length === 0 && <p>No walls for this booth yet.</p>}
+              </div>
+            </aside>
+
+            {wall ? (
+              <WallAssignmentCanvas
+                key={wall.id}
+                wall={wall}
+                placedItems={placedItems}
+                selectedAssignmentId={selectedAssignmentId}
+                onSelect={handleCanvasSelect}
+                onMove={handleMove}
+                onTransformEnd={handleTransformEnd}
+                showGrid={showGrid}
+              />
+            ) : (
+              <div className="wall-editor-empty">
+                <p>This booth doesn&rsquo;t have any walls yet.</p>
+                <button type="button" onClick={() => setShowAddWall(true)}>
+                  Add Wall
+                </button>
+              </div>
+            )}
+          </div>
+
+          {wall && (
+            <>
+              <WallInventory
+                placedItems={placedItems}
+                selectedAssignmentId={selectedAssignmentId}
+                onSelect={handleListSelect}
+                isOpen={inventoryOpen}
+                onToggle={() => setInventoryOpen((prev) => !prev)}
+              />
+
+              <section>
+                <h2>Available items</h2>
+                <AvailableItemsTray items={availableItems} onSelect={handleAddItem} />
+              </section>
+            </>
+          )}
+        </>
+      )}
+
+      {showAddWall && <WallFormDialog boothId={booth.id} onClose={() => setShowAddWall(false)} />}
+
+      {showReport && <BoothReportDialog booth={booth} onClose={() => setShowReport(false)} />}
 
       {detailItem && (
         <ItemDetailDialog
