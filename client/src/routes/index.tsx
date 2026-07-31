@@ -28,6 +28,10 @@ export const router = createBrowserRouter([
         path: 'label-printer',
         lazy: () => import('@/pages/LabelPrinterPage').then((m) => ({ Component: m.LabelPrinterPage })),
       },
+      {
+        path: 'settings',
+        lazy: () => import('@/pages/SettingsPage').then((m) => ({ Component: m.SettingsPage })),
+      },
     ],
   },
 ])

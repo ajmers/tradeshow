@@ -127,6 +127,9 @@ export function AppLayout() {
           <div className="app-nav__footer">
             {baseInfo?.name && <p className="app-nav__base">{baseInfo.name}</p>}
             {session?.user.email && <p className="app-nav__email">{session.user.email}</p>}
+            <NavLink to="/settings" className="app-nav__settings-link">
+              Settings
+            </NavLink>
             <SignOutButton />
           </div>
         </div>
