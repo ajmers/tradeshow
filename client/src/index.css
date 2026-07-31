@@ -1272,7 +1272,7 @@ dialog.item-detail-dialog {
   border: none;
   border-radius: 0.75rem;
   padding: 0;
-  width: min(28rem, calc(100vw - 2rem));
+  width: min(34rem, calc(100vw - 2rem));
   color: inherit;
   background: light-dark(#fff, #18181b);
 }

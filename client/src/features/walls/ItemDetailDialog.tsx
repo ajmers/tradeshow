@@ -157,11 +157,6 @@ export function ItemDetailDialog({
             <button type="button" onClick={handleRemove} disabled={removing}>
               {removing ? 'Removing…' : removeLabel}
             </button>
-            {!fields['Is Prop'] && (
-              <button type="button" className="item-detail__sell-button" onClick={() => setMode('sell')}>
-                $ Sell
-              </button>
-            )}
             {moveOptions && moveOptions.otherWalls.length > 0 && (
               <div className="item-detail__move-menu" ref={moveMenuRef}>
                 <button
@@ -189,6 +184,11 @@ export function ItemDetailDialog({
                   </div>
                 )}
               </div>
+            )}
+            {!fields['Is Prop'] && (
+              <button type="button" className="item-detail__sell-button" onClick={() => setMode('sell')}>
+                $ Sell
+              </button>
             )}
           </div>
         </div>
