@@ -1384,6 +1384,18 @@ dialog.item-detail-dialog::backdrop {
   margin-top: 1rem;
 }
 
+.item-detail__actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.item-detail__actions button svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
 .item-detail__sell-button {
   border-color: light-dark(#15803d, #166534);
   background: light-dark(#16a34a, #15803d);

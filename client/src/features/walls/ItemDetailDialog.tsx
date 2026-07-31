@@ -3,6 +3,23 @@ import type { Item, Wall } from '@shared'
 import { getItemImageUrl } from '@/features/items/getItemImageUrl'
 import { useCreateSale } from '@/hooks/useSaleMutations'
 
+function RemoveIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+      <path d="M5 5l14 14M19 5L5 19" />
+    </svg>
+  )
+}
+
+function MoveIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+      <path d="M12 3v18M3 12h18" />
+      <path d="M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3" />
+    </svg>
+  )
+}
+
 interface MoveOptions {
   otherWalls: Wall[]
   onMove: (targetWallId: string) => Promise<unknown>
@@ -155,6 +172,7 @@ export function ItemDetailDialog({
 
           <div className="item-detail__actions">
             <button type="button" onClick={handleRemove} disabled={removing}>
+              <RemoveIcon />
               {removing ? 'Removing…' : removeLabel}
             </button>
             {moveOptions && moveOptions.otherWalls.length > 0 && (
@@ -166,6 +184,7 @@ export function ItemDetailDialog({
                   disabled={moving}
                   onClick={() => setShowMoveMenu((prev) => !prev)}
                 >
+                  <MoveIcon />
                   {moving ? 'Moving…' : 'Move to Another Wall'}
                 </button>
                 {showMoveMenu && (
