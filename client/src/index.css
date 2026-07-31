@@ -40,6 +40,7 @@ h6 {
   position: sticky;
   top: 0;
   height: 100vh;
+  background: light-dark(#fafafa, #18181b);
   border-right: 1px solid light-dark(#d4d4d8, #3f3f46);
   padding: 2rem 1rem;
   transition: width 0.15s ease;
