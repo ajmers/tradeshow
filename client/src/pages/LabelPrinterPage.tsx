@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import type { Item } from '@shared'
 import { useItems } from '@/hooks/useItems'
 import { useBooths } from '@/hooks/useBooths'
 import { useWalls } from '@/hooks/useWalls'
@@ -9,6 +10,7 @@ import { useBaseInfo } from '@/hooks/useBaseInfo'
 import { LabelPrinterConfigPanel } from '@/features/labelPrinter/LabelPrinterConfigPanel'
 import { ItemSelectionList } from '@/features/labelPrinter/ItemSelectionList'
 import { LabelSheet } from '@/features/labelPrinter/LabelSheet'
+import { NewLabelItemDialog } from '@/features/labelPrinter/NewLabelItemDialog'
 import {
   loadLabelPrinterConfig,
   saveLabelPrinterConfig,
@@ -27,6 +29,7 @@ export function LabelPrinterPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [boothFilter, setBoothFilter] = useState(() => searchParams.get('boothId') ?? '')
   const [wallFilter, setWallFilter] = useState('')
+  const [showNewLabel, setShowNewLabel] = useState(false)
   const hasInitializedSelection = useRef(false)
   // Defaults to enabled while base info is still loading, so the page doesn't flash
   // to "not available" and back once it resolves (it's normally already cached from
@@ -121,6 +124,17 @@ export function LabelPrinterPage() {
     setSelectedIds(itemIdsForLocation(boothFilter, wallId))
   }
 
+  // Clears any booth/wall filter — a brand-new item isn't assigned to a wall
+  // yet, so it would otherwise be filtered straight out of view — and selects
+  // just the new item, so its label is the one thing shown, ready to refine
+  // with the pencil-icon editors.
+  function handleItemCreated(item: Item) {
+    setBoothFilter('')
+    setWallFilter('')
+    setSelectedIds(new Set([item.id]))
+    setShowNewLabel(false)
+  }
+
   const locationItemIds = itemIdsForLocation(boothFilter, wallFilter)
   const filteredItems = itemsData.filter((item) => locationItemIds.has(item.id))
   const selectedItems = filteredItems.filter((item) => selectedIds.has(item.id))
@@ -138,6 +152,13 @@ export function LabelPrinterPage() {
           disabled={selectedItems.length === 0}
         >
           Print
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowNewLabel(true)}
+          title="Creates a new Item in your inventory, ready to print as a label."
+        >
+          New Label
         </button>
 
         <LabelPrinterConfigPanel config={config} onChange={setConfig} />
@@ -220,6 +241,10 @@ export function LabelPrinterPage() {
         showLogo={config.showLogo}
         logoDataUrl={logo.data ?? null}
       />
+
+      {showNewLabel && (
+        <NewLabelItemDialog onClose={() => setShowNewLabel(false)} onCreated={handleItemCreated} />
+      )}
     </main>
   )
 }

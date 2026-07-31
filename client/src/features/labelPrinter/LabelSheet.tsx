@@ -1,14 +1,17 @@
+import { useState, type FormEvent } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
 import type { Item } from '@shared'
-import { LABEL_FIELDS } from '@/features/labelPrinter/labelFields'
+import { LABEL_FIELDS, type LabelField } from '@/features/labelPrinter/labelFields'
 import { PAGE_LAYOUTS } from '@/features/labelPrinter/labelPrinterConfig'
 import {
   bucketItemsByWordCount,
   BUCKET_LABELS_PER_PAGE,
   BUCKET_TITLES,
 } from '@/features/labelPrinter/labelBucketing'
+import { InlineRichTextEditor } from '@/features/labelPrinter/InlineRichTextEditor'
+import { useUpdateItem } from '@/hooks/useItemMutations'
 
 interface LabelSheetProps {
   items: Item[]
@@ -25,9 +28,101 @@ function chunk<T>(list: T[], size: number): T[][] {
   return chunks
 }
 
+// Only these two are actually "the label's own text" as opposed to data
+// pulled in from the rest of the item record — Title edits here write to
+// Label Title specifically (see EditableLabelField below), never to the
+// item's real Title, so quick-editing a label can't rename it everywhere else.
+const EDITABLE_FIELD_KEYS = new Set(['Title', 'Label'])
+
+interface EditableLabelFieldProps {
+  item: Item
+  field: LabelField
+  value: string
+  isEditing: boolean
+  onStartEdit: () => void
+  onStopEdit: () => void
+}
+
+function EditableLabelField({ item, field, value, isEditing, onStartEdit, onStopEdit }: EditableLabelFieldProps) {
+  const updateItem = useUpdateItem()
+
+  const className = field.richText
+    ? `label-sheet__field label-sheet__field--${field.key} label-sheet__field--richtext`
+    : `label-sheet__field label-sheet__field--${field.key}`
+
+  async function saveTitle(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const newValue = new FormData(event.currentTarget).get('title')
+    await updateItem.mutateAsync({
+      id: item.id,
+      input: { 'Label Title': typeof newValue === 'string' ? newValue : '' },
+    })
+    onStopEdit()
+  }
+
+  async function saveLabel(markdown: string) {
+    await updateItem.mutateAsync({ id: item.id, input: { Label: markdown } })
+    onStopEdit()
+  }
+
+  if (isEditing && field.richText) {
+    return (
+      <div className={className}>
+        <InlineRichTextEditor value={value} onSave={saveLabel} onCancel={onStopEdit} />
+      </div>
+    )
+  }
+
+  if (isEditing) {
+    return (
+      <form className="label-sheet__field-edit" onSubmit={(event) => void saveTitle(event)}>
+        <input
+          name="title"
+          defaultValue={value}
+          autoFocus
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              onStopEdit()
+            }
+          }}
+        />
+        <button type="button" onClick={onStopEdit} disabled={updateItem.isPending}>
+          Cancel
+        </button>
+        <button type="submit" disabled={updateItem.isPending}>
+          {updateItem.isPending ? 'Saving…' : 'Save'}
+        </button>
+      </form>
+    )
+  }
+
+  return (
+    <div className="label-sheet__field-display">
+      {field.richText ? (
+        <div className={className}>
+          <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>{value}</ReactMarkdown>
+        </div>
+      ) : (
+        <p className={className}>{value}</p>
+      )}
+      <button
+        type="button"
+        className="label-sheet__edit-button"
+        onClick={onStartEdit}
+        aria-label={`Edit ${field.label}`}
+        title={`Edit ${field.label}`}
+      >
+        ✎
+      </button>
+    </div>
+  )
+}
+
 export function LabelSheet({ items, fieldKeys, showLogo, logoDataUrl }: LabelSheetProps) {
   const fields = LABEL_FIELDS.filter((field) => fieldKeys.includes(field.key))
   const hasLogo = showLogo && Boolean(logoDataUrl)
+  // At most one field editing at a time, identified by "<itemId>:<fieldKey>".
+  const [editingKey, setEditingKey] = useState<string | null>(null)
 
   if (items.length === 0) {
     return <p>Select at least one item to preview labels.</p>
@@ -72,25 +167,40 @@ export function LabelSheet({ items, fieldKeys, showLogo, logoDataUrl }: LabelShe
                       if (!value) {
                         return null
                       }
-                      if (field.richText) {
+                      if (!EDITABLE_FIELD_KEYS.has(field.key)) {
+                        if (field.richText) {
+                          return (
+                            <div
+                              key={field.key}
+                              className={`label-sheet__field label-sheet__field--${field.key} label-sheet__field--richtext`}
+                            >
+                              <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                                {value}
+                              </ReactMarkdown>
+                            </div>
+                          )
+                        }
                         return (
-                          <div
+                          <p
                             key={field.key}
-                            className={`label-sheet__field label-sheet__field--${field.key} label-sheet__field--richtext`}
+                            className={`label-sheet__field label-sheet__field--${field.key}`}
                           >
-                            <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-                              {value}
-                            </ReactMarkdown>
-                          </div>
+                            {value}
+                          </p>
                         )
                       }
+
+                      const key = `${item.id}:${field.key}`
                       return (
-                        <p
+                        <EditableLabelField
                           key={field.key}
-                          className={`label-sheet__field label-sheet__field--${field.key}`}
-                        >
-                          {value}
-                        </p>
+                          item={item}
+                          field={field}
+                          value={value}
+                          isEditing={editingKey === key}
+                          onStartEdit={() => setEditingKey(key)}
+                          onStopEdit={() => setEditingKey(null)}
+                        />
                       )
                     })}
                   </div>
