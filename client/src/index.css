@@ -1052,6 +1052,10 @@ dialog.booth-report-dialog {
   margin-bottom: 0.5rem;
 }
 
+.wall-editor-zoom__gridlines {
+  margin-left: 0.75rem;
+}
+
 .wall-editor-zoom button {
   min-width: 2.25rem;
   padding: 0.3rem 0.5rem;

@@ -227,7 +227,7 @@ export function WallAssignmentCanvas({
         >
           +
         </button>
-        <button type="button" onClick={onToggleGrid}>
+        <button type="button" className="wall-editor-zoom__gridlines" onClick={onToggleGrid}>
           {showGrid ? 'Hide gridlines' : 'Show gridlines'}
         </button>
       </div>
