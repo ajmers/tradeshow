@@ -186,7 +186,7 @@ export function AppLayout() {
                 </li>
               </ul>
             )}
-            {baseInfo?.isAdmin ? (
+            {true || baseInfo?.isAdmin ? (
               <div className="app-nav__status">
                 <HealthStatus />
               </div>

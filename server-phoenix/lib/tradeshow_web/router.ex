@@ -7,6 +7,7 @@ defmodule TradeshowWeb.Router do
 
   scope "/api", TradeshowWeb do
     pipe_through :api
+    get "/health", HealthController, :check
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

@@ -28,6 +28,13 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
+      // Routes migrated to the Phoenix API go here, above the generic '/api'
+      // fallback below — Vite matches proxy rules in order, so the more
+      // specific path must come first or '/api' would swallow it.
+      '/api/health': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,
