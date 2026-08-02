@@ -350,14 +350,41 @@ export function WallDetailPage() {
 
     return updateAssignment.mutateAsync({
       id: assignment.id,
-      input: { Wall: [targetWallId], 'X Position': x, 'Y Position': y },
+      input: {
+        Wall: [targetWallId],
+        'X Position': x,
+        'Y Position': y,
+        ...labelDeltaInput(assignment.id, x, y),
+      },
     })
+  }
+
+  // Once a label has been dragged to an explicit spot, it should keep riding
+  // along with the item — so moving/transforming the item carries the label
+  // by the same delta instead of leaving it pinned at its old absolute spot.
+  // A label still at its (unset) computed default doesn't need this: that
+  // default is recalculated from the item's current position on every
+  // render, so it already tracks the item for free.
+  function labelDeltaInput(assignmentId: string, xInches: number, yInches: number) {
+    const assignment = boothAssignments.find((entry) => entry.id === assignmentId)
+    const labelX = assignment?.fields['Label X Position']
+    const labelY = assignment?.fields['Label Y Position']
+    if (labelX === undefined || labelY === undefined) {
+      return {}
+    }
+    const deltaX = xInches - (assignment?.fields['X Position'] ?? xInches)
+    const deltaY = yInches - (assignment?.fields['Y Position'] ?? yInches)
+    return { 'Label X Position': labelX + deltaX, 'Label Y Position': labelY + deltaY }
   }
 
   const handleMove = (assignmentId: string, xInches: number, yInches: number) => {
     updateAssignment.mutate({
       id: assignmentId,
-      input: { 'X Position': xInches, 'Y Position': yInches },
+      input: {
+        'X Position': xInches,
+        'Y Position': yInches,
+        ...labelDeltaInput(assignmentId, xInches, yInches),
+      },
     })
   }
 
@@ -376,7 +403,12 @@ export function WallDetailPage() {
   ) => {
     updateAssignment.mutate({
       id: assignmentId,
-      input: { 'X Position': xInches, 'Y Position': yInches, 'Rotation Angle': rotationDegrees },
+      input: {
+        'X Position': xInches,
+        'Y Position': yInches,
+        'Rotation Angle': rotationDegrees,
+        ...labelDeltaInput(assignmentId, xInches, yInches),
+      },
     })
   }
 
