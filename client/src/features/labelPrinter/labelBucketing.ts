@@ -1,5 +1,6 @@
 import type { Item } from '@shared'
-import type { LabelField } from '@/features/labelPrinter/labelFields'
+import { LABEL_FIELDS, DEFAULT_FIELD_KEYS, type LabelField } from '@/features/labelPrinter/labelFields'
+import { PAGE_LAYOUTS } from '@/features/labelPrinter/labelPrinterConfig'
 
 export type LabelSizeBucket = 'full' | 'large' | 'medium' | 'small'
 
@@ -69,6 +70,34 @@ export function labelSizeBucket(item: Item, fields: LabelField[]): LabelSizeBuck
   const explicit = item.fields['Label Size']
   const explicitBucket = explicit ? EXPLICIT_LABEL_SIZE_TO_BUCKET[explicit] : undefined
   return explicitBucket ?? classifyByWordCount(wordCount(item, fields))
+}
+
+// The label's full default field set (Title/Label/Artist/Dimensions/Price) —
+// used as the word-count basis for every caller that isn't the print sheet
+// itself (which classifies against whatever fields that view currently has
+// configured to show). An item's bucket should be a stable property of the
+// item, not something that shifts based on a particular view's display
+// choices, so callers like the wall canvas and the New Label preview classify
+// against this fixed set rather than any one view's current selection.
+const DEFAULT_FIELDS = LABEL_FIELDS.filter((field) => DEFAULT_FIELD_KEYS.includes(field.key))
+
+export function labelSizeBucketForItem(item: Item): LabelSizeBucket {
+  return labelSizeBucket(item, DEFAULT_FIELDS)
+}
+
+// Matches .label-sheet__page's own printed dimensions (index.css) — a bucket's
+// physical size is "however big that many labels dividing an actual printed
+// page would be," not a size invented separately per caller.
+const PAGE_WIDTH_INCHES = 7.2
+const PAGE_HEIGHT_INCHES = 9.7
+
+export function bucketSizeInches(bucket: LabelSizeBucket): { width: number; height: number } {
+  const labelsPerPage = BUCKET_LABELS_PER_PAGE[bucket]
+  const layout = PAGE_LAYOUTS[labelsPerPage] ?? { columns: 2, rows: 4 }
+  return {
+    width: PAGE_WIDTH_INCHES / layout.columns,
+    height: PAGE_HEIGHT_INCHES / layout.rows,
+  }
 }
 
 export interface BucketedItems {

@@ -5,6 +5,11 @@ import { useCreateItem } from '@/hooks/useItemMutations'
 import { useItems } from '@/hooks/useItems'
 import { LABEL_FIELDS } from '@/features/labelPrinter/labelFields'
 import { EditableLabelField } from '@/features/labelPrinter/EditableLabelField'
+import {
+  bucketSizeInches,
+  labelSizeBucketForItem,
+  BUCKET_TITLES,
+} from '@/features/labelPrinter/labelBucketing'
 
 const TITLE_FIELD = LABEL_FIELDS.find((field) => field.key === 'Title')
 const LABEL_FIELD = LABEL_FIELDS.find((field) => field.key === 'Label')
@@ -83,6 +88,15 @@ export function NewLabelItemDialog({ onClose, onCreated }: NewLabelItemDialogPro
   }
 
   if (createdItem && TITLE_FIELD && LABEL_FIELD) {
+    // Recomputed fresh on every render (not memoized against a snapshot), so
+    // editing the title/label text below and having it save naturally
+    // re-checks whether the label still fits its current bucket or needs to
+    // grow/shrink to the next one — no separate polling needed, since a save
+    // already triggers a re-render with the updated item from the live query.
+    const bucket = labelSizeBucketForItem(createdItem)
+    const { width, height } = bucketSizeInches(bucket)
+    const isPinned = Boolean(createdItem.fields['Label Size'])
+
     return (
       <dialog ref={dialogRef} className="item-dialog">
         <div className="new-label-preview">
@@ -90,7 +104,14 @@ export function NewLabelItemDialog({ onClose, onCreated }: NewLabelItemDialogPro
           <p className="item-dialog__hint">
             The item is saved. Click the pencil on either line below to adjust it.
           </p>
-          <div className="new-label-preview__card">
+          <p className="new-label-preview__size">
+            {isPinned ? 'Fixed size — ' : 'Auto-sized — '}
+            {BUCKET_TITLES[bucket]}
+          </p>
+          <div
+            className="new-label-preview__card"
+            style={{ width: `${width}in`, height: `${height}in` }}
+          >
             <EditableLabelField
               item={createdItem}
               field={TITLE_FIELD}

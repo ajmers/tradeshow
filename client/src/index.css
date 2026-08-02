@@ -566,13 +566,27 @@ dialog.item-dialog textarea {
   margin: 0;
 }
 
+.new-label-preview__size {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: light-dark(#52525b, #a1a1aa);
+}
+
 .new-label-preview__card {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   border: 1px solid light-dark(#d4d4d8, #3f3f46);
   border-radius: 0.5rem;
-  padding: 1.5rem;
+  /* Matches .label-sheet__label's own padding, so this preview's usable
+     interior space -- what's actually left for the title/label text -- is
+     the same fraction of the box as the real printed label, not just the
+     outer box dimensions alone. */
+  padding: 1.25rem;
+  /* Same clipping the real printed label gets (.label-sheet__label) --
+     content that doesn't fit is visibly cut off here too, rather than the
+     box silently growing past the size it's supposed to represent. */
+  overflow: hidden;
 }
 
 .item-dialog__actions {
