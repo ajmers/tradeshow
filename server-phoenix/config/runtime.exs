@@ -20,6 +20,23 @@ if System.get_env("PHX_SERVER") do
   config :tradeshow, TradeshowWeb.Endpoint, server: true
 end
 
+# Load server-phoenix/.env in dev/test, same spirit as the old Node server's
+# process.loadEnvFile() — production gets real env vars from the host instead.
+# Dotenvy stores sourced values in a process dictionary read by env!/2, not
+# System.get_env, and isn't even compiled into prod releases (see mix.exs).
+if config_env() != :prod do
+  import Dotenvy
+  source!([Path.absname(".env", File.cwd!()), System.get_env()])
+
+  config :tradeshow, :supabase,
+    url: env!("SUPABASE_URL", :string!),
+    publishable_key: env!("SUPABASE_PUBLISHABLE_KEY", :string!)
+else
+  config :tradeshow, :supabase,
+    url: System.get_env("SUPABASE_URL"),
+    publishable_key: System.get_env("SUPABASE_PUBLISHABLE_KEY")
+end
+
 if config_env() == :prod do
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you
