@@ -44,7 +44,27 @@ export function useUpdateWallAssignment() {
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: UpdateWallAssignmentInput }) =>
       updateWallAssignment(id, input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['wallAssignments'] }),
+    onMutate: async ({ id, input }) => {
+      // Applied optimistically, synchronously in the cache — so a second drag
+      // (e.g. moving the item right after dragging its label) reads this
+      // update immediately instead of racing the server round trip.
+      await queryClient.cancelQueries({ queryKey: ['wallAssignments'] })
+      const previous = queryClient.getQueryData<WallAssignment[]>(['wallAssignments'])
+      queryClient.setQueryData<WallAssignment[]>(['wallAssignments'], (current) =>
+        current?.map((assignment) =>
+          assignment.id === id
+            ? { ...assignment, fields: { ...assignment.fields, ...input } }
+            : assignment,
+        ),
+      )
+      return { previous }
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['wallAssignments'], context.previous)
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['wallAssignments'] }),
   })
 }
 
