@@ -193,7 +193,7 @@ export function AppLayout() {
             ) : (
               labelLogo && (
                 <div className="app-nav__status">
-                  <img src={labelLogo} alt="" className="app-nav__status-logo" />
+                  <img src={labelLogo ?? undefined} alt="" className="app-nav__status-logo" />
                 </div>
               )
             )}
