@@ -5,9 +5,30 @@ defmodule TradeshowWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :authenticated do
+    plug TradeshowWeb.Plugs.RequireAuth
+  end
+
+  pipeline :is_admin do
+    plug TradeshowWeb.Plugs.RequireAdmin
+  end
+
   scope "/api", TradeshowWeb do
     pipe_through :api
     get "/health", HealthController, :check
+  end
+
+  scope "/api", TradeshowWeb do
+    pipe_through [:api, :authenticated]
+    get "/consigners", ConsignersController, :index
+  end
+
+  scope "/api", TradeshowWeb do
+    pipe_through [:api, :authenticated, :is_admin]
+    get "/admin/users", AdminController, :users
+    get "/admin/bases", AdminController, :bases
+    patch "/admin/users/:id", AdminController, :assign_user_base
+    patch "/admin/users/:id/feature-flags", AdminController, :update_profile_feature_flags
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
