@@ -5,9 +5,19 @@ defmodule TradeshowWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :authenticated do
+    plug TradeshowWeb.Plugs.RequireAuth
+  end
+
   scope "/api", TradeshowWeb do
     pipe_through :api
     get "/health", HealthController, :check
+  end
+
+  scope "/api", TradeshowWeb do
+    pipe_through [:api, :authenticated]
+
+    get "/me", MeController, :show
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
