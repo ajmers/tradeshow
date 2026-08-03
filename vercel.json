@@ -6,6 +6,8 @@
   "rewrites": [
     { "source": "/api/health", "destination": "https://tradeshow-1.onrender.com/api/health" },
     { "source": "/api/consigners", "destination": "https://tradeshow-1.onrender.com/api/consigners" },
+    { "source": "/api/base", "destination": "https://tradeshow-1.onrender.com/api/base" },
+    { "source": "/api/sales", "destination": "https://tradeshow-1.onrender.com/api/sales" },
     { "source": "/api/admin/:path*", "destination": "https://tradeshow-1.onrender.com/api/admin/:path*" },
     { "source": "/api/:path*", "destination": "/api" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
