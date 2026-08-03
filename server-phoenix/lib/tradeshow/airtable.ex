@@ -54,4 +54,11 @@ defmodule Tradeshow.Airtable do
   def list_all_bases() do
     fetch_base(nil, [])
   end
+
+  def get_base_info(base_id) do
+    with {:ok, bases} <- list_all_bases() do
+      base = Enum.find(bases, &(&1["id"] == base_id))
+      {:ok, base && base["name"]}
+    end
+  end
 end
