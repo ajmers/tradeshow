@@ -23,10 +23,11 @@ defmodule TradeshowWeb.Router do
     get "/consigners", ConsignersController, :index
   end
 
-  # scope "/api/admin", TradeshowWeb do
-  #  pipe_through [:api, :authenticated, :is_admin]
-  #  get "/users, UsersController, :index 
-  # end 
+  scope "/api", TradeshowWeb do
+    pipe_through [:api, :authenticated, :is_admin]
+    get "/admin/users", AdminController, :users
+    get "/admin/bases", AdminController, :bases
+  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:tradeshow, :dev_routes) do
