@@ -28,6 +28,7 @@ defmodule TradeshowWeb.Router do
     get "/admin/users", AdminController, :users
     get "/admin/bases", AdminController, :bases
     patch "/admin/users/:id", AdminController, :assign_user_base
+    patch "/admin/users/:id/feature-flags", AdminController, :update_profile_feature_flags
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

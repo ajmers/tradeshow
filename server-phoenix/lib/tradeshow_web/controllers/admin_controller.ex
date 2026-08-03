@@ -27,4 +27,23 @@ defmodule TradeshowWeb.AdminController do
         conn |> put_status(502) |> json(%{error: "Failed to update user"})
     end
   end
+
+  def update_profile_feature_flags(conn, %{"id" => user_id, "featureFlags" => feature_flags}) do
+    case Tradeshow.Admin.set_user_feature_flags(user_id, feature_flags) do
+      {:ok, profile} ->
+        json(conn, profile)
+
+      {:error, :no_base_assigned} ->
+        conn
+        |> put_status(400)
+        |> json(%{
+          error: "Assign an Airtable base to this user before enabling features for them."
+        })
+
+      {:error, _} ->
+        conn
+        |> put_status(400)
+        |> json(%{error: "Failed to update feature flags"})
+    end
+  end
 end

@@ -64,6 +64,36 @@ defmodule Tradeshow.Admin do
     end
   end
 
+  def update_profile_feature_flags(user_id, merged_flags) do
+    case Req.patch("#{Tradeshow.Supabase.url()}/rest/v1/profiles",
+           headers: admin_headers() ++ [{"prefer", "return=representation"}],
+           params: [id: "eq.#{user_id}"],
+           json: %{feature_flags: merged_flags}
+         ) do
+      {:ok, %{status: 200, body: [profile | _]}} -> {:ok, profile}
+      {:ok, %{status: 200, body: []}} -> {:error, :no_base_assigned}
+      _ -> {:error, :fetch_failed}
+    end
+  end
+
+  def set_user_feature_flags(user_id, feature_flags) do
+    with {:ok, existing_flags} <- fetch_profile_feature_flags(user_id) do
+      merged = Map.merge(existing_flags || %{}, feature_flags)
+      update_profile_feature_flags(user_id, merged)
+    end
+  end
+
+  defp fetch_profile_feature_flags(user_id) do
+    case Req.get("#{Tradeshow.Supabase.url()}/rest/v1/profiles",
+           headers: admin_headers(),
+           params: [id: "eq.#{user_id}", select: "feature_flags"]
+         ) do
+      {:ok, %{status: 200, body: [profile | _]}} -> {:ok, profile["feature_flags"]}
+      {:ok, %{status: 200, body: []}} -> {:error, :no_base_assigned}
+      _ -> {:error, :fetch_failed}
+    end
+  end
+
   defp admin_headers do
     key = Tradeshow.Supabase.secret_key()
     [{"authorization", "Bearer #{key}"}, {"apikey", key}]
