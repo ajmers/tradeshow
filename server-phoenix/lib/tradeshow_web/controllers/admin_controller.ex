@@ -16,10 +16,15 @@ defmodule TradeshowWeb.AdminController do
   end
 
   def assign_user_base(conn, %{"id" => user_id, "airtableBaseId" => airtable_base_id}) do
-    case Tradshow.Admin.assign_user_base(user_id, airtable_base_id) do
-        :ok -> json(conn, %{ok: true})
-        {:error, :unknown_base} -> conn |> put_status(400) |> json(%{error: "Unknown Airtable base id"})
-        {:error, _} -> conn |> put_status(502) |> json(%{error: "Failed to update user"})
-  end
+    case Tradeshow.Admin.assign_user_base(user_id, airtable_base_id) do
+      :ok ->
+        json(conn, %{ok: true})
 
+      {:error, :unknown_base} ->
+        conn |> put_status(400) |> json(%{error: "Unknown Airtable base id"})
+
+      {:error, _} ->
+        conn |> put_status(502) |> json(%{error: "Failed to update user"})
+    end
+  end
 end

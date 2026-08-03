@@ -27,7 +27,7 @@ defmodule TradeshowWeb.Router do
     pipe_through [:api, :authenticated, :is_admin]
     get "/admin/users", AdminController, :users
     get "/admin/bases", AdminController, :bases
-    patch "/admin/users/:id", AdminController, assign_user_base
+    patch "/admin/users/:id", AdminController, :assign_user_base
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

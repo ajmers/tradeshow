@@ -24,14 +24,14 @@ defmodule Tradeshow.Admin do
     end
   end
 
-  defp assign_user_base(user_id, airtable_base_id) do
+  def assign_user_base(user_id, airtable_base_id) do
     with {:ok, bases} <- Tradeshow.Airtable.list_all_bases(),
-         true <- Enum.any(bases, &(&1["id"] == airtable_base_id))
-
-    upsert_profile_base(user_id, airtable_base_id)
-  else
-    false -> {:error, :unknown_base}
-    {:error, reason} -> {:error, reason}
+         true <- Enum.any?(bases, &(&1["id"] == airtable_base_id)) do
+      upsert_profile_base(user_id, airtable_base_id)
+    else
+      false -> {:error, :unknown_base}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   defp upsert_profile_base(user_id, airtable_base_id) do
