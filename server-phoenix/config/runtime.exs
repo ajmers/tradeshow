@@ -25,15 +25,14 @@ end
 # Dotenvy stores sourced values in a process dictionary read by env!/2, not
 # System.get_env, and isn't even compiled into prod releases (see mix.exs).
 if config_env() != :prod do
-  import Dotenvy
-  source!([Path.absname(".env", File.cwd!()), System.get_env()])
+  Dotenvy.source!([Path.absname(".env", File.cwd!()), System.get_env()])
 
   config :tradeshow, :supabase,
-    url: env!("SUPABASE_URL", :string!),
-    publishable_key: env!("SUPABASE_PUBLISHABLE_KEY", :string!),
-    secret_key: env!("SUPABASE_SECRET_KEY", :string!)
+    url: Dotenvy.env!("SUPABASE_URL", :string!),
+    publishable_key: Dotenvy.env!("SUPABASE_PUBLISHABLE_KEY", :string!),
+    secret_key: Dotenvy.env!("SUPABASE_SECRET_KEY", :string!)
 
-  config :tradeshow, :airtable, pat: env!("AIRTABLE_PAT", :string!)
+  config :tradeshow, :airtable, pat: Dotenvy.env!("AIRTABLE_PAT", :string!)
 else
   config :tradeshow, :supabase,
     url: System.get_env("SUPABASE_URL"),
@@ -56,7 +55,7 @@ if config_env() == :prod do
       You can generate one by calling: mix phx.gen.secret
       """
 
-  host = System.get_env("PHX_HOST") || "example.com"
+  host = System.get_env("RENDER_EXTERNAL_HOSTNAME") || "localhost"
   port = String.to_integer(System.get_env("PORT") || "4000")
 
   config :tradeshow, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
