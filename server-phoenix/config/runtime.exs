@@ -30,13 +30,15 @@ if config_env() != :prod do
 
   config :tradeshow, :supabase,
     url: env!("SUPABASE_URL", :string!),
-    publishable_key: env!("SUPABASE_PUBLISHABLE_KEY", :string!)
+    publishable_key: env!("SUPABASE_PUBLISHABLE_KEY", :string!),
+    secret_key: env!("SUPABASE_SECRET_KEY", :string!)
 
   config :tradeshow, :airtable, pat: env!("AIRTABLE_PAT", :string!)
 else
   config :tradeshow, :supabase,
     url: System.get_env("SUPABASE_URL"),
-    publishable_key: System.get_env("SUPABASE_PUBLISHABLE_KEY")
+    publishable_key: System.get_env("SUPABASE_PUBLISHABLE_KEY"),
+    secret_key: System.get_env("SUPABASE_SECRET_KEY")
 
   config :tradeshow, :airtable, pat: System.get_env("AIRTABLE_PAT")
 end
