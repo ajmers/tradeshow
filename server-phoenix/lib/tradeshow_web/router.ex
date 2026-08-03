@@ -16,6 +16,7 @@ defmodule TradeshowWeb.Router do
 
   scope "/api", TradeshowWeb do
     pipe_through [:api, :authenticated]
+    get "/consigners", ConsignersController, :index
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
