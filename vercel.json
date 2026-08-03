@@ -4,6 +4,9 @@
   "installCommand": "pnpm install",
   "outputDirectory": "client/dist",
   "rewrites": [
+    { "source": "/api/health", "destination": "https://tradeshow-1.onrender.com/api/health" },
+    { "source": "/api/consigners", "destination": "https://tradeshow-1.onrender.com/api/consigners" },
+    { "source": "/api/admin/:path*", "destination": "https://tradeshow-1.onrender.com/api/admin/:path*" },
     { "source": "/api/:path*", "destination": "/api" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
