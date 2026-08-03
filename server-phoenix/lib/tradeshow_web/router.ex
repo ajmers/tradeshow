@@ -24,6 +24,10 @@ defmodule TradeshowWeb.Router do
     get "/base", BaseController, :show
     get "/sales", SalesController, :index
     post "/sales", SalesController, :create
+    get "/walls", WallsController, :index
+    post "/walls", WallsController, :create
+    patch "/walls/:id", WallsController, :update
+    delete "/walls/:id", WallsController, :delete
   end
 
   scope "/api", TradeshowWeb do
