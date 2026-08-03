@@ -1,5 +1,25 @@
+require Logger
+
 defmodule Tradeshow.Airtable do
   defp airtable_pat, do: Application.get_env(:tradeshow, :airtable)[:pat]
+
+  def create_record(base_id, table, fields) do
+    case Req.post("https://api.airtable.com/v0/#{base_id}/#{URI.encode(table)}",
+           headers: [{"authorization", "Bearer #{airtable_pat()}"}],
+           json: %{fields: fields}
+         ) do
+      {:ok, %{status: status, body: record}} when status in 200..299 ->
+        {:ok, record}
+
+      {:ok, %{status: status, body: body}} ->
+        Logger.error("Airtable create_record failed: status=#{status} body=#{inspect(body)}")
+        {:error, :airtable_request_failed}
+
+      {:error, reason} ->
+        Logger.error("Airtable create_record request error: #{inspect(reason)}")
+        {:error, :airtable_request_failed}
+    end
+  end
 
   defp fetch_page(base_id, table, offset, acc) do
     params = if(offset, do: [offset: offset], else: [])
