@@ -33,18 +33,16 @@ export function labelDimensionsForItem(item: Item): LabelDimensions {
 }
 
 /**
- * Where a newly-placed item's label starts before the user ever drags it: to the
- * right of the item, with its bottom edge on the same baseline as the item's, so
- * it never overlaps the item.
+ * Where a newly-placed item's label starts before the user ever drags it, as an
+ * offset from the item's own X/Y: to the item's right, with its bottom edge on
+ * the same baseline as the item's, so it never overlaps the item.
  */
-export function defaultLabelPosition(
-  itemXInches: number,
-  itemYInches: number,
+export function defaultLabelOffset(
   itemFootprint: { width: number; height: number },
   labelHeightInches: number,
 ): { x: number; y: number } {
   return {
-    x: itemXInches + itemFootprint.width + GAP_INCHES,
-    y: itemYInches + itemFootprint.height - labelHeightInches,
+    x: itemFootprint.width + GAP_INCHES,
+    y: itemFootprint.height - labelHeightInches,
   }
 }

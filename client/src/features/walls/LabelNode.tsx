@@ -12,7 +12,7 @@ import {
   TITLE_FONT_PX,
 } from '@/features/walls/labelDimensions'
 import {
-  defaultLabelPosition,
+  defaultLabelOffset,
   labelDimensionsForItem,
   labelLinesForItem,
 } from '@/features/walls/labelPlacement'
@@ -22,7 +22,9 @@ interface LabelNodeProps {
   item: Item
   scale: number
   interactive?: boolean
-  onMove?: (assignmentId: string, xInches: number, yInches: number) => void
+  // Reports the label's new offset from the item (in inches), not an absolute
+  // wall position — see the offsetX/offsetY computation in onDragEnd below.
+  onMove?: (assignmentId: string, offsetXInches: number, offsetYInches: number) => void
 }
 
 export function LabelNode({ assignment, item, scale, interactive = false, onMove }: LabelNodeProps) {
@@ -35,10 +37,15 @@ export function LabelNode({ assignment, item, scale, interactive = false, onMove
   const itemFootprint = itemFootprintInches(item.fields)
   const itemX = assignment.fields['X Position'] ?? 0
   const itemY = assignment.fields['Y Position'] ?? 0
-  const fallback = defaultLabelPosition(itemX, itemY, itemFootprint, dims.heightInches)
+  const fallbackOffset = defaultLabelOffset(itemFootprint, dims.heightInches)
 
-  const xInches = assignment.fields['Label X Position'] ?? fallback.x
-  const yInches = assignment.fields['Label Y Position'] ?? fallback.y
+  // Stored fields are an offset from the item's own position, so the label
+  // rides along automatically whenever the item moves — no separate
+  // bookkeeping needed when the item is dragged, transformed, or moved walls.
+  const offsetX = assignment.fields['Label X Position'] ?? fallbackOffset.x
+  const offsetY = assignment.fields['Label Y Position'] ?? fallbackOffset.y
+  const xInches = itemX + offsetX
+  const yInches = itemY + offsetY
 
   const w = dims.widthInches * scale
   const h = dims.heightInches * scale
@@ -86,7 +93,7 @@ export function LabelNode({ assignment, item, scale, interactive = false, onMove
         interactive
           ? (event) => {
               const node = event.target
-              onMove?.(assignment.id, node.x() / scale, node.y() / scale)
+              onMove?.(assignment.id, node.x() / scale - itemX, node.y() / scale - itemY)
             }
           : undefined
       }

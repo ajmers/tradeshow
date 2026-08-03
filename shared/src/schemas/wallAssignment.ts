@@ -8,9 +8,11 @@ export const wallAssignmentFieldsSchema = z.object({
   'X Position': z.number().optional(),
   'Y Position': z.number().optional(),
   'Rotation Angle': z.number().optional(),
-  // Position of the item's on-wall label, independent of the item's own X/Y —
-  // unset until the user first drags the label away from its computed default
-  // spot (see defaultLabelPosition in the client's labelPlacement.ts).
+  // Position of the item's on-wall label, as an offset from the item's own
+  // X/Y (not an absolute wall position) — unset until the user first drags
+  // the label away from its computed default spot (see defaultLabelOffset in
+  // the client's labelPlacement.ts). Storing it relative to the item means
+  // moving/transforming the item never needs to touch these fields.
   'Label X Position': z.number().optional(),
   'Label Y Position': z.number().optional(),
   Notes: z.string().optional(),
