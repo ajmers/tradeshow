@@ -24,6 +24,26 @@ defmodule Tradeshow.Admin do
     end
   end
 
+  defp assign_user_base(user_id, airtable_base_id) do
+    with {:ok, bases} <- Tradeshow.Airtable.list_all_bases(),
+         true <- Enum.any(bases, &(&1["id"] == airtable_base_id))
+
+    upsert_profile_base(user_id, airtable_base_id)
+  else
+    false -> {:error, :unknown_base}
+    {:error, reason} -> {:error, reason}
+  end
+
+  defp upsert_profile_base(user_id, airtable_base_id) do
+    case Req.post("#{Tradeshow.Supabase.url()}/rest/v1/profiles",
+           headers: admin_headers() ++ [{"prefer", "resolution=merge-duplicates"}],
+           json: %{id: user_id, airtable_base_id: airtable_base_id}
+         ) do
+      {:ok, %{status: status}} when status in 200..299 -> :ok
+      _ -> {:error, :update_failed}
+    end
+  end
+
   defp fetch_auth_users do
     case Req.get("#{Tradeshow.Supabase.url()}/auth/v1/admin/users",
            headers: admin_headers(),
