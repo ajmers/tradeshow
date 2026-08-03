@@ -22,6 +22,8 @@ defmodule TradeshowWeb.Router do
     pipe_through [:api, :authenticated]
     get "/consigners", ConsignersController, :index
     get "/base", BaseController, :show
+    get "/sales", SalesController, :index
+    post "/sales", SalesController, :create
   end
 
   scope "/api", TradeshowWeb do
