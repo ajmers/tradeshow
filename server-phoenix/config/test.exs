@@ -18,3 +18,7 @@ config :logger, level: :warning
 
 # Initialize plugs at runtime for faster test compilation
 config :phoenix, :plug_init_mode, :runtime
+
+# Route Tradeshow.Airtable's Req calls through a Req.Test stub instead of the
+# real network — each test controls the fake response via Req.Test.stub/2.
+config :tradeshow, :airtable_req_opts, plug: {Req.Test, Tradeshow.Airtable}

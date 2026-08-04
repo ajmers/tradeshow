@@ -1,12 +1,20 @@
 defmodule Tradeshow.Airtable do
   require Logger
 
+  defp req_opts, do: Application.get_env(:tradeshow, :airtable_req_opts, [])
+
   defp airtable_pat, do: Application.get_env(:tradeshow, :airtable)[:pat]
 
   def create_record(base_id, table, fields) do
-    case Req.post("https://api.airtable.com/v0/#{base_id}/#{URI.encode(table)}",
-           headers: [{"authorization", "Bearer #{airtable_pat()}"}],
-           json: %{fields: fields}
+    case Req.post(
+           "https://api.airtable.com/v0/#{base_id}/#{URI.encode(table)}",
+           Keyword.merge(
+             [
+               headers: [{"authorization", "Bearer #{airtable_pat()}"}],
+               json: %{fields: fields}
+             ],
+             req_opts()
+           )
          ) do
       {:ok, %{status: status, body: record}} when status in 200..299 ->
         {:ok, record}
@@ -24,9 +32,15 @@ defmodule Tradeshow.Airtable do
   defp fetch_page(base_id, table, offset, acc) do
     params = if(offset, do: [offset: offset], else: [])
 
-    case Req.get("https://api.airtable.com/v0/#{base_id}/#{URI.encode(table)}",
-           headers: [{"authorization", "Bearer #{airtable_pat()}"}],
-           params: params
+    case Req.get(
+           "https://api.airtable.com/v0/#{base_id}/#{URI.encode(table)}",
+           Keyword.merge(
+             [
+               headers: [{"authorization", "Bearer #{airtable_pat()}"}],
+               params: params
+             ],
+             req_opts()
+           )
          ) do
       {:ok, %{status: 200, body: %{"records" => records} = body}} ->
         all_records = acc ++ records
@@ -51,9 +65,15 @@ defmodule Tradeshow.Airtable do
   defp fetch_base(offset, acc) do
     params = if(offset, do: [offset: offset], else: [])
 
-    case Req.get("https://api.airtable.com/v0/meta/bases",
-           headers: [{"authorization", "Bearer #{airtable_pat()}"}],
-           params: params
+    case Req.get(
+           "https://api.airtable.com/v0/meta/bases",
+           Keyword.merge(
+             [
+               headers: [{"authorization", "Bearer #{airtable_pat()}"}],
+               params: params
+             ],
+             req_opts()
+           )
          ) do
       {:ok, %{status: 200, body: %{"bases" => bases} = body}} ->
         all_bases = acc ++ bases
@@ -83,9 +103,15 @@ defmodule Tradeshow.Airtable do
   end
 
   def update_record(base_id, table, id, fields) do
-    case Req.patch("https://api.airtable.com/v0/#{base_id}/#{URI.encode(table)}/#{id}",
-           headers: [{"authorization", "Bearer #{airtable_pat()}"}],
-           json: %{fields: fields}
+    case Req.patch(
+           "https://api.airtable.com/v0/#{base_id}/#{URI.encode(table)}/#{id}",
+           Keyword.merge(
+             [
+               headers: [{"authorization", "Bearer #{airtable_pat()}"}],
+               json: %{fields: fields}
+             ],
+             req_opts()
+           )
          ) do
       {:ok, %{status: status, body: record}} when status in 200..299 ->
         {:ok, record}
@@ -101,8 +127,14 @@ defmodule Tradeshow.Airtable do
   end
 
   def delete_record(base_id, table, id) do
-    case Req.delete("https://api.airtable.com/v0/#{base_id}/#{URI.encode(table)}/#{id}",
-           headers: [{"authorization", "Bearer #{airtable_pat()}"}]
+    case Req.delete(
+           "https://api.airtable.com/v0/#{base_id}/#{URI.encode(table)}/#{id}",
+           Keyword.merge(
+             [
+               headers: [{"authorization", "Bearer #{airtable_pat()}"}]
+             ],
+             req_opts()
+           )
          ) do
       {:ok, %{status: status}} when status in 200..299 ->
         :ok
