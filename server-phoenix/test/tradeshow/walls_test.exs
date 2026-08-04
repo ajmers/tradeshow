@@ -31,5 +31,6 @@ defmodule Tradeshow.WallsTest do
     assert_received {:deleted_assignment, "recAssign1"}
     assert_received {:deleted_wall, ^wall_id}
     refute_received {:deleted_assignment, "recAssign2"}
+    refute_received {:deleted_wall, "recOtherWall"}
   end
 end
