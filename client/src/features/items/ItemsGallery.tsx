@@ -5,6 +5,7 @@ import { ItemCard } from '@/features/items/ItemCard'
 import { ItemFormDialog } from '@/features/items/ItemFormDialog'
 
 type SortOption = 'title-asc' | 'title-desc' | 'newest' | 'oldest'
+type PropsFilter = 'all' | 'props' | 'non-props'
 
 const sortOptions: Array<{ value: SortOption; label: string }> = [
   { value: 'title-asc', label: 'Title (A–Z)' },
@@ -12,6 +13,23 @@ const sortOptions: Array<{ value: SortOption; label: string }> = [
   { value: 'newest', label: 'Newest first' },
   { value: 'oldest', label: 'Oldest first' },
 ]
+
+const propsFilterOptions: Array<{ value: PropsFilter; label: string }> = [
+  { value: 'all', label: 'All items' },
+  { value: 'props', label: 'Props only' },
+  { value: 'non-props', label: 'Exclude props' },
+]
+
+function filterByPropsStatus(items: Item[], propsFilter: PropsFilter): Item[] {
+  switch (propsFilter) {
+    case 'props':
+      return items.filter((item) => item.fields['Is Prop'])
+    case 'non-props':
+      return items.filter((item) => !item.fields['Is Prop'])
+    case 'all':
+      return items
+  }
+}
 
 function sortItems(items: Item[], sortBy: SortOption): Item[] {
   const sorted = [...items]
@@ -37,17 +55,19 @@ export function ItemsGallery() {
   const [dialogState, setDialogState] = useState<Item | 'create' | null>(null)
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<SortOption>('title-asc')
+  const [propsFilter, setPropsFilter] = useState<PropsFilter>('all')
 
   const visibleItems = useMemo(() => {
     if (!data) {
       return []
     }
     const query = search.trim().toLowerCase()
-    const filtered = query
+    const searched = query
       ? data.filter((item) => (item.fields.Title ?? '').toLowerCase().includes(query))
       : data
+    const filtered = filterByPropsStatus(searched, propsFilter)
     return sortItems(filtered, sortBy)
-  }, [data, search, sortBy])
+  }, [data, search, sortBy, propsFilter])
 
   return (
     <>
@@ -70,6 +90,17 @@ export function ItemsGallery() {
             </option>
           ))}
         </select>
+        <select
+          value={propsFilter}
+          onChange={(event) => setPropsFilter(event.target.value as PropsFilter)}
+          aria-label="Filter by prop status"
+        >
+          {propsFilterOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
         <button type="button" onClick={() => setDialogState('create')}>
           Add Item
         </button>
@@ -78,7 +109,9 @@ export function ItemsGallery() {
       {isPending && <p>Loading items…</p>}
       {isError && <p role="alert">Error loading items: {error.message}</p>}
       {data && data.length === 0 && <p>No items yet.</p>}
-      {data && data.length > 0 && visibleItems.length === 0 && <p>No items match your search.</p>}
+      {data && data.length > 0 && visibleItems.length === 0 && (
+        <p>No items match your search and filters.</p>
+      )}
 
       {visibleItems.length > 0 && (
         <div className="gallery">
