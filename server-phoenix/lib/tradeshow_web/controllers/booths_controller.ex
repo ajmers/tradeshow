@@ -11,7 +11,7 @@ defmodule TradeshowWeb.BoothsController do
 
   def create(conn, params) do
     case Booths.create_booth(conn.assigns.airtable_base_id, params) do
-      {:ok, record} -> conn |> put_status(201) |> json(conn, record)
+      {:ok, record} -> conn |> put_status(201) |> json(record)
       {:error, _reason} -> conn |> put_status(502) |> json(%{error: "Failed to create booth"})
     end
   end
