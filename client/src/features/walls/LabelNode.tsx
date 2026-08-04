@@ -38,12 +38,11 @@ export function LabelNode({ assignment, item, scale, interactive = false, onMove
   const itemFootprint = itemFootprintInches(item.fields)
   const itemX = assignment.fields['X Position'] ?? 0
   const itemY = assignment.fields['Y Position'] ?? 0
-  const fallback = defaultLabelPosition(itemX, itemY, itemFootprint, dims.heightInches)
+  const { width: labelWidthInches, height: labelHeightInches } = labelSizeInches(item)
+  const fallback = defaultLabelPosition(itemX, itemY, itemFootprint, labelHeightInches)
 
   const xInches = assignment.fields['Label X Position'] ?? fallback.x
   const yInches = assignment.fields['Label Y Position'] ?? fallback.y
-
-  const { width: labelWidthInches, height: labelHeightInches } = labelSizeInches(item)
 
   const w = labelWidthInches * scale
   const h = labelHeightInches * scale

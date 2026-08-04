@@ -88,8 +88,8 @@ export function labelSizeBucketForItem(item: Item): LabelSizeBucket {
 // Matches .label-sheet__page's own printed dimensions (index.css) — a bucket's
 // physical size is "however big that many labels dividing an actual printed
 // page would be," not a size invented separately per caller.
-const PAGE_WIDTH_INCHES = 7.2
-const PAGE_HEIGHT_INCHES = 9.7
+export const PAGE_WIDTH_INCHES = 7.2
+export const PAGE_HEIGHT_INCHES = 9.7
 
 export function bucketSizeInches(bucket: LabelSizeBucket): { width: number; height: number } {
   const labelsPerPage = BUCKET_LABELS_PER_PAGE[bucket]

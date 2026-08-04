@@ -1544,6 +1544,28 @@ dialog.item-detail-dialog::backdrop {
   border-top: 1px solid light-dark(#d4d4d8, #3f3f46);
 }
 
+.label-printer-mode-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.label-printer-mode-toggle button {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.875rem;
+  font: inherit;
+  border: 1px solid light-dark(#d4d4d8, #3f3f46);
+  border-radius: 999px;
+  background: light-dark(#fff, #27272a);
+  color: inherit;
+}
+
+.label-printer-mode-toggle button[aria-pressed='true'] {
+  background: light-dark(#18181b, #fafafa);
+  color: light-dark(#fafafa, #18181b);
+  border-color: transparent;
+}
+
 .label-printer-print-button {
   position: fixed;
   bottom: 1.5rem;
@@ -1849,12 +1871,18 @@ dialog.item-detail-dialog::backdrop {
 
 .label-sheet__label--with-logo {
   justify-content: flex-start;
+  /* Establishes a query container sized to this label's own box (already
+     fixed via width/height: 100% inside its grid cell), so .label-sheet__logo
+     can size itself as a proportion of *this* label rather than a flat rem
+     value that reads tiny on a 2-per-page label and comparatively huge on an
+     8-per-page one. */
+  container-type: size;
 }
 
 .label-sheet__logo {
   align-self: center;
-  max-width: 60%;
-  max-height: 3rem;
+  max-width: 70%;
+  max-height: 30cqh;
   object-fit: contain;
   margin-bottom: 0.25rem;
 }

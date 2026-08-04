@@ -10,6 +10,7 @@ import { useBaseInfo } from '@/hooks/useBaseInfo'
 import { LabelPrinterConfigPanel } from '@/features/labelPrinter/LabelPrinterConfigPanel'
 import { ItemSelectionList } from '@/features/labelPrinter/ItemSelectionList'
 import { LabelSheet } from '@/features/labelPrinter/LabelSheet'
+import { BlankLabelSheet, type LabelOrientation } from '@/features/labelPrinter/BlankLabelSheet'
 import { NewLabelItemDialog } from '@/features/labelPrinter/NewLabelItemDialog'
 import {
   loadLabelPrinterConfig,
@@ -26,6 +27,9 @@ export function LabelPrinterPage() {
   const baseInfo = useBaseInfo()
   const [searchParams] = useSearchParams()
   const [config, setConfig] = useState<LabelPrinterConfig>(() => loadLabelPrinterConfig())
+  const [mode, setMode] = useState<'items' | 'blank'>('items')
+  const [blankLabelsPerPage, setBlankLabelsPerPage] = useState(4)
+  const [blankOrientation, setBlankOrientation] = useState<LabelOrientation>('portrait')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [boothFilter, setBoothFilter] = useState(() => searchParams.get('boothId') ?? '')
   const [wallFilter, setWallFilter] = useState('')
@@ -39,6 +43,21 @@ export function LabelPrinterPage() {
   useEffect(() => {
     saveLabelPrinterConfig(config)
   }, [config])
+
+  // Tells the browser's print dialog which paper orientation to actually use —
+  // without this, a landscape-shaped page div would just get squeezed onto
+  // portrait paper. Only follows the blank-label orientation while blank mode
+  // is active, so switching back to item labels (always portrait) can't print
+  // on landscape paper because of a stale choice made earlier in blank mode.
+  useEffect(() => {
+    const effectiveOrientation = mode === 'blank' ? blankOrientation : 'portrait'
+    const style = document.createElement('style')
+    style.textContent = `@page { size: ${effectiveOrientation}; }`
+    document.head.appendChild(style)
+    return () => {
+      document.head.removeChild(style)
+    }
+  }, [mode, blankOrientation])
 
   // Everything starts selected by default (or, if arriving from a booth's "Print
   // Labels" link, just that booth's items) — the user can then deselect individual
@@ -147,104 +166,167 @@ export function LabelPrinterPage() {
         <div className="page-toolbar">
           <h1>Label Printer</h1>
         </div>
+
+        <div className="label-printer-mode-toggle" role="group" aria-label="Label type">
+          <button type="button" aria-pressed={mode === 'items'} onClick={() => setMode('items')}>
+            Item Labels
+          </button>
+          <button type="button" aria-pressed={mode === 'blank'} onClick={() => setMode('blank')}>
+            Blank Labels
+          </button>
+        </div>
+
         <button
           type="button"
           className="label-printer-print-button"
           onClick={() => window.print()}
-          disabled={selectedItems.length === 0}
+          disabled={mode === 'items' && selectedItems.length === 0}
         >
           Print
         </button>
-        <button
-          type="button"
-          onClick={() => setShowNewLabel(true)}
-          title="Creates a new Item in your inventory, ready to print as a label."
-        >
-          New Label
-        </button>
+        {mode === 'items' && (
+          <button
+            type="button"
+            onClick={() => setShowNewLabel(true)}
+            title="Creates a new Item in your inventory, ready to print as a label."
+          >
+            New Label
+          </button>
+        )}
 
         <hr className="label-printer-controls__divider" />
 
-        <fieldset className="label-printer-filters">
-          <legend>Filters</legend>
-          <div className="label-printer-filters__row">
-            <label>
-              Booth
-              <select
-                value={boothFilter}
-                onChange={(event) => handleBoothFilterChange(event.target.value)}
-              >
-                <option value="">— Select a booth —</option>
-                {boothsData.map((booth) => (
-                  <option key={booth.id} value={booth.id}>
-                    {booth.fields['Booth Name'] ?? 'Untitled booth'}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {boothFilter && (
+        {mode === 'items' ? (
+          <>
+            <fieldset className="label-printer-filters">
+              <legend>Filters</legend>
+              <div className="label-printer-filters__row">
+                <label>
+                  Booth
+                  <select
+                    value={boothFilter}
+                    onChange={(event) => handleBoothFilterChange(event.target.value)}
+                  >
+                    <option value="">— Select a booth —</option>
+                    {boothsData.map((booth) => (
+                      <option key={booth.id} value={booth.id}>
+                        {booth.fields['Booth Name'] ?? 'Untitled booth'}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {boothFilter && (
+                  <label>
+                    Wall
+                    <select
+                      value={wallFilter}
+                      onChange={(event) => handleWallFilterChange(event.target.value)}
+                    >
+                      <option value="">All walls in this booth</option>
+                      {wallsInSelectedBooth.map((wall) => (
+                        <option key={wall.id} value={wall.id}>
+                          {wall.fields['Wall Name'] ?? 'Untitled wall'}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+              </div>
+              <div className="label-printer-filters__pills">
+                {!boothFilter && (
+                  <span className="label-printer-pill label-printer-pill--muted">All Inventory</span>
+                )}
+                {boothFilter && (
+                  <span className="label-printer-pill">
+                    {boothsData.find((booth) => booth.id === boothFilter)?.fields['Booth Name'] ??
+                      'Untitled booth'}
+                    <button
+                      type="button"
+                      onClick={() => handleBoothFilterChange('')}
+                      aria-label="Clear booth filter"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+                {wallFilter && (
+                  <span className="label-printer-pill">
+                    {wallsInSelectedBooth.find((wall) => wall.id === wallFilter)?.fields[
+                      'Wall Name'
+                    ] ?? 'Untitled wall'}
+                    <button
+                      type="button"
+                      onClick={() => handleWallFilterChange('')}
+                      aria-label="Clear wall filter"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+              </div>
+            </fieldset>
+
+            <LabelPrinterConfigPanel config={config} onChange={setConfig} />
+
+            <ItemSelectionList items={filteredItems} selectedIds={selectedIds} onChange={setSelectedIds} />
+          </>
+        ) : (
+          <fieldset className="label-printer-filters">
+            <legend>Blank label options</legend>
+            <div className="label-printer-filters__row">
               <label>
-                Wall
+                Labels per page
                 <select
-                  value={wallFilter}
-                  onChange={(event) => handleWallFilterChange(event.target.value)}
+                  value={blankLabelsPerPage}
+                  onChange={(event) => setBlankLabelsPerPage(Number(event.target.value))}
                 >
-                  <option value="">All walls in this booth</option>
-                  {wallsInSelectedBooth.map((wall) => (
-                    <option key={wall.id} value={wall.id}>
-                      {wall.fields['Wall Name'] ?? 'Untitled wall'}
-                    </option>
-                  ))}
+                  <option value={2}>2</option>
+                  <option value={4}>4</option>
+                  <option value={8}>8</option>
                 </select>
               </label>
-            )}
-          </div>
-          <div className="label-printer-filters__pills">
-            {!boothFilter && (
-              <span className="label-printer-pill label-printer-pill--muted">All Inventory</span>
-            )}
-            {boothFilter && (
-              <span className="label-printer-pill">
-                {boothsData.find((booth) => booth.id === boothFilter)?.fields['Booth Name'] ??
-                  'Untitled booth'}
-                <button
-                  type="button"
-                  onClick={() => handleBoothFilterChange('')}
-                  aria-label="Clear booth filter"
+              <label>
+                Orientation
+                <select
+                  value={blankOrientation}
+                  onChange={(event) =>
+                    setBlankOrientation(event.target.value as LabelOrientation)
+                  }
                 >
-                  ×
-                </button>
-              </span>
-            )}
-            {wallFilter && (
-              <span className="label-printer-pill">
-                {wallsInSelectedBooth.find((wall) => wall.id === wallFilter)?.fields['Wall Name'] ??
-                  'Untitled wall'}
-                <button
-                  type="button"
-                  onClick={() => handleWallFilterChange('')}
-                  aria-label="Clear wall filter"
-                >
-                  ×
-                </button>
-              </span>
-            )}
-          </div>
-        </fieldset>
-
-        <LabelPrinterConfigPanel config={config} onChange={setConfig} />
-
-        <ItemSelectionList items={filteredItems} selectedIds={selectedIds} onChange={setSelectedIds} />
+                  <option value="portrait">Portrait</option>
+                  <option value="landscape">Landscape</option>
+                </select>
+              </label>
+              <label className="label-printer-config__checkbox">
+                <input
+                  type="checkbox"
+                  checked={config.showLogo}
+                  onChange={(event) => setConfig({ ...config, showLogo: event.target.checked })}
+                />
+                Show logo
+              </label>
+            </div>
+          </fieldset>
+        )}
 
         <h2>Preview</h2>
       </div>
 
-      <LabelSheet
-        items={selectedItems}
-        fieldKeys={config.fieldKeys}
-        showLogo={config.showLogo}
-        logoDataUrl={logo.data ?? null}
-      />
+      {mode === 'items' ? (
+        <LabelSheet
+          items={selectedItems}
+          fieldKeys={config.fieldKeys}
+          showLogo={config.showLogo}
+          logoDataUrl={logo.data ?? null}
+        />
+      ) : (
+        <BlankLabelSheet
+          labelsPerPage={blankLabelsPerPage}
+          showLogo={config.showLogo}
+          logoDataUrl={logo.data ?? null}
+          orientation={blankOrientation}
+        />
+      )}
 
       {showNewLabel && (
         <NewLabelItemDialog onClose={() => setShowNewLabel(false)} onCreated={handleItemCreated} />
