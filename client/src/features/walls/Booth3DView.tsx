@@ -26,6 +26,7 @@ import {
 } from '@/features/walls/BoothScene3D'
 import { AvailableItemsTray } from '@/features/walls/AvailableItemsTray'
 import { ItemDetailDialog } from '@/features/walls/ItemDetailDialog'
+import { FullscreenButton, useFullscreenToggle } from '@/features/walls/FullscreenButton'
 import { findEmptySpot } from '@/features/walls/findEmptySpot'
 import { itemFloorFootprintInches, itemFootprintInches, wallDimensionToInches } from '@/features/walls/wallScale'
 import type { PlacedItem } from '@/features/walls/PlacedItem'
@@ -170,6 +171,7 @@ export function Booth3DView({ booth }: { booth: Booth }) {
   const [itemToPlaceOnFloor, setItemToPlaceOnFloor] = useState('')
   const [detailTarget, setDetailTarget] = useState<DetailTarget | null>(null)
   const orbitControlsRef = useRef<ComponentRef<typeof OrbitControls>>(null)
+  const { containerRef, isFullscreen, toggleFullscreen } = useFullscreenToggle<HTMLDivElement>()
 
   const isPending =
     walls.isPending || items.isPending || wallAssignments.isPending || sales.isPending || floorPlacements.isPending
@@ -453,7 +455,8 @@ export function Booth3DView({ booth }: { booth: Booth }) {
           </div>
 
           <div className="booth-3d-layout">
-            <div className="booth-3d-canvas-wrapper">
+            <div className="booth-3d-canvas-wrapper" ref={containerRef}>
+              <FullscreenButton isFullscreen={isFullscreen} onToggle={toggleFullscreen} />
               <Canvas camera={{ position: [widthFt! * 0.9, heightFt! * 1.1, depthFt! * 1.4], fov: 50 }}>
                 <BoothScene3D
                   widthFt={widthFt!}

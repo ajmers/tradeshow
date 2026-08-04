@@ -7,6 +7,7 @@ import { wallDimensionToInches } from '@/features/walls/wallScale'
 import { PlacedItemNode } from '@/features/walls/PlacedItemNode'
 import { LabelNode } from '@/features/walls/LabelNode'
 import { WallGrid } from '@/features/walls/WallGrid'
+import { FullscreenButton, useFullscreenToggle } from '@/features/walls/FullscreenButton'
 import type { PlacedItem } from '@/features/walls/PlacedItem'
 
 // How far beyond the wall's own bounds you can scroll to see items placed off-wall.
@@ -18,9 +19,12 @@ const MARGIN_INCHES_Y = 12
 // point the canvas exceeds the available viewport and scrolling kicks in instead.
 const MIN_SCALE = 3
 const DEFAULT_AVAILABLE_SIZE = { width: 700, height: 700 }
-// Leaves room below the canvas (e.g. the available-items tray) so the page fits
-// without scrolling on typical viewports.
-const HEIGHT_BUDGET_RATIO = 0.55
+// Reserves room below the canvas for the "On this wall" tray (its heading + one row
+// of item cards) plus the page's own bottom padding, so that section sits fully
+// within the viewport instead of being partly scrolled off. A fixed reserve rather
+// than a ratio, since that tray's height doesn't grow with item count (it scrolls
+// horizontally) or with viewport size.
+const RESERVED_BELOW_CANVAS = 290
 const MIN_HEIGHT_BUDGET = 400
 
 // Zoom is a multiplier on top of the auto-fit scale above, not an absolute pixel value.
@@ -67,7 +71,12 @@ export function WallAssignmentCanvas({
   const nodeRefs = useRef(new Map<string, Konva.Group>())
   const transformerRef = useRef<Konva.Transformer>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const wrapperRef = useRef<HTMLDivElement>(null)
+  const zoomToolbarRef = useRef<HTMLDivElement>(null)
+  const {
+    containerRef: wrapperRef,
+    isFullscreen,
+    toggleFullscreen,
+  } = useFullscreenToggle<HTMLDivElement>()
   const [availableSize, setAvailableSize] = useState(DEFAULT_AVAILABLE_SIZE)
   const [zoom, setZoom] = useState(1)
   // When zoom changes via a button/wheel, this captures where the view was (as a
@@ -135,7 +144,9 @@ export function WallAssignmentCanvas({
     : undefined
 
   // Track how much room the canvas actually has, so it can grow to fill the viewport
-  // instead of being capped at a fixed size regardless of screen space.
+  // instead of being capped at a fixed size regardless of screen space. In fullscreen,
+  // the wrapper fills the browser tab and nothing else is visible below it, so the
+  // only thing to leave room for is the zoom toolbar rendered inside the wrapper.
   useLayoutEffect(() => {
     const wrapper = wrapperRef.current
     if (!wrapper) {
@@ -143,9 +154,13 @@ export function WallAssignmentCanvas({
     }
 
     const updateSize = () => {
+      const toolbarHeight = zoomToolbarRef.current?.getBoundingClientRect().height ?? 0
+      const height = isFullscreen
+        ? wrapper.clientHeight - toolbarHeight
+        : window.innerHeight - wrapper.getBoundingClientRect().top - RESERVED_BELOW_CANVAS
       setAvailableSize({
         width: wrapper.clientWidth,
-        height: Math.max(MIN_HEIGHT_BUDGET, window.innerHeight * HEIGHT_BUDGET_RATIO),
+        height: Math.max(MIN_HEIGHT_BUDGET, height),
       })
     }
 
@@ -157,7 +172,7 @@ export function WallAssignmentCanvas({
       observer.disconnect()
       window.removeEventListener('resize', updateSize)
     }
-  }, [])
+  }, [isFullscreen])
 
   useLayoutEffect(() => {
     const transformer = transformerRef.current
@@ -210,7 +225,7 @@ export function WallAssignmentCanvas({
 
   return (
     <div className="wall-editor-canvas-wrapper" ref={wrapperRef}>
-      <div className="wall-editor-zoom">
+      <div className="wall-editor-zoom" ref={zoomToolbarRef}>
         <button
           type="button"
           onClick={() => adjustZoom((current) => current - ZOOM_STEP)}
@@ -233,6 +248,7 @@ export function WallAssignmentCanvas({
         <button type="button" className="wall-editor-zoom__gridlines" onClick={onToggleGrid}>
           {showGrid ? 'Hide gridlines' : 'Show gridlines'}
         </button>
+        <FullscreenButton isFullscreen={isFullscreen} onToggle={toggleFullscreen} />
       </div>
       <div
         className="wall-editor-canvas"

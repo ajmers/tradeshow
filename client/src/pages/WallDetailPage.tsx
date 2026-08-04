@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import type { Item, Wall, WallAssignment } from '@shared'
-import { Breadcrumb } from '@/components/Breadcrumb'
 import { useBooths } from '@/hooks/useBooths'
 import { useWalls } from '@/hooks/useWalls'
 import { useItems } from '@/hooks/useItems'
@@ -20,9 +19,11 @@ import { WallCanvas } from '@/features/walls/WallCanvas'
 import { WallFormDialog } from '@/features/walls/WallFormDialog'
 import { WallDimensionsEditor } from '@/features/walls/WallDimensionsEditor'
 import { WallColorPicker } from '@/features/walls/WallColorPicker'
-import { WallInventory } from '@/features/walls/WallInventory'
+import { SidePanel } from '@/features/walls/SidePanel'
+import { OnThisWallList } from '@/features/walls/OnThisWallList'
 import { ItemDetailDialog } from '@/features/walls/ItemDetailDialog'
 import { Booth3DView } from '@/features/walls/Booth3DView'
+import { SingleWallView3D } from '@/features/walls/SingleWallView3D'
 import { BoothReportDialog } from '@/features/booths/BoothReportDialog'
 import type { PlacedItem } from '@/features/walls/PlacedItem'
 import { AvailableItemsTray } from '@/features/walls/AvailableItemsTray'
@@ -189,6 +190,7 @@ export function WallDetailPage() {
   const [showReport, setShowReport] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('2d')
   const [inventoryOpen, setInventoryOpen] = useState(true)
+  const [singleWallView, setSingleWallView] = useState(false)
 
   // Delete/Backspace removes the selected item directly from the canvas. Only active
   // while the detail dialog is closed, so it never fights with typing in the Sell form.
@@ -388,6 +390,20 @@ export function WallDetailPage() {
     })
   }
 
+  // Returned (not fire-and-forget, unlike the 2D handleMove) so the dragged item's
+  // 3D mesh can keep showing its optimistic position until this actually finishes,
+  // instead of snapping back and then jumping again — see PlacedItem3D's onMove.
+  const handleMoveItem3D = (assignmentId: string, xInches: number, yInches: number) => {
+    return updateAssignment.mutateAsync({
+      id: assignmentId,
+      input: {
+        'X Position': xInches,
+        'Y Position': yInches,
+        ...labelDeltaInput(assignmentId, xInches, yInches),
+      },
+    })
+  }
+
   const handleMoveLabel = (assignmentId: string, xInches: number, yInches: number) => {
     updateAssignment.mutate({
       id: assignmentId,
@@ -436,53 +452,93 @@ export function WallDetailPage() {
 
   return (
     <main className={inventoryOpen ? 'wall-detail-page' : 'wall-detail-page wall-detail-page--inventory-collapsed'}>
-      <Breadcrumb
-        items={
-          wall
-            ? [
-                { label: 'Booth Planner', to: '/booth-planner' },
-                { label: boothName, to: `/booth-planner/${booth.id}` },
-                { label: wall.fields['Wall Name'] ?? 'Untitled wall' },
-              ]
-            : [{ label: 'Booth Planner', to: '/booth-planner' }, { label: boothName }]
-        }
-      />
-
       <div className="page-toolbar page-toolbar--booth">
-        <div className="page-toolbar__title">
-          <div>
-            <p className="wall-editor-booth-label">{boothName}</p>
-            <div className="wall-editor-name-row">
-              <h1>{wall ? (wall.fields['Wall Name'] ?? 'Untitled wall') : 'No walls yet'}</h1>
-              {wall && (
-                <ActionsMenu label="Wall actions">
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="actions-menu__delete"
-                    onClick={handleDeleteWall}
-                    disabled={deleteWall.isPending}
-                  >
-                    {deleteWall.isPending ? 'Deleting…' : 'Delete Wall'}
-                  </button>
-                </ActionsMenu>
-              )}
+        <div className="page-toolbar__header">
+          <Link
+            to="/booth-planner"
+            className="wall-editor-back-button"
+            title="See all booths"
+            aria-label="See all booths"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M19 12H5M5 12L11 6M5 12L11 18"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </Link>
+          <div className="page-toolbar__title">
+            <div className="wall-editor-booth-row">
+              <p className="wall-editor-booth-label">{boothName}</p>
+              <ActionsMenu label="Booth actions">
+                <button type="button" role="menuitem" onClick={() => setShowReport(true)}>
+                  Run Booth Report
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="actions-menu__delete"
+                  onClick={handleDeleteBooth}
+                >
+                  Delete Booth
+                </button>
+              </ActionsMenu>
             </div>
-            {wall && viewMode === '2d' && <WallDimensionsEditor wall={wall} key={wall.id} />}
+            <div className="wall-editor-name-block">
+              <svg
+                className="wall-editor-tree-connector"
+                width="24"
+                height="18"
+                viewBox="0 0 16 12"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path d="M4 0 V5 Q4 8 8 8 H11" stroke="currentColor" strokeWidth="1.5" />
+                <path
+                  d="M9.5 6 L13 8 L9.5 10"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <div className="wall-editor-name-row">
+                <h1>{wall ? (wall.fields['Wall Name'] ?? 'Untitled wall') : 'No walls yet'}</h1>
+                {wall && (
+                  <ActionsMenu label="Wall actions">
+                    <button type="button" role="menuitem" onClick={printWallCanvas}>
+                      Print Wall
+                    </button>
+                    {booth3dEnabled && (
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setSingleWallView(true)
+                          setViewMode('3d')
+                        }}
+                      >
+                        View this wall only in 3D
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="actions-menu__delete"
+                      onClick={handleDeleteWall}
+                      disabled={deleteWall.isPending}
+                    >
+                      {deleteWall.isPending ? 'Deleting…' : 'Delete Wall'}
+                    </button>
+                  </ActionsMenu>
+                )}
+              </div>
+              {wall && viewMode === '2d' && <WallDimensionsEditor wall={wall} key={wall.id} />}
+            </div>
           </div>
-          <ActionsMenu label="Booth actions">
-            <button type="button" role="menuitem" onClick={() => setShowReport(true)}>
-              Run Booth Report
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              className="actions-menu__delete"
-              onClick={handleDeleteBooth}
-            >
-              Delete Booth
-            </button>
-          </ActionsMenu>
         </div>
         {booth3dEnabled && (
           <div className="view-toggle" role="group" aria-label="View mode">
@@ -498,7 +554,10 @@ export function WallDetailPage() {
               type="button"
               className={`view-toggle__button${viewMode === '3d' ? ' view-toggle__button--active' : ''}`}
               aria-pressed={viewMode === '3d'}
-              onClick={() => setViewMode('3d')}
+              onClick={() => {
+                setSingleWallView(false)
+                setViewMode('3d')
+              }}
             >
               3D
             </button>
@@ -507,24 +566,41 @@ export function WallDetailPage() {
       </div>
 
       {booth3dEnabled && viewMode === '3d' ? (
-        <Booth3DView booth={booth} />
+        singleWallView && wall ? (
+          <>
+            <div className="booth-3d-toolbar">
+              <button type="button" onClick={() => setSingleWallView(false)}>
+                ← View whole booth
+              </button>
+              <span>{wall.fields['Wall Name'] ?? 'Untitled wall'}</span>
+            </div>
+            <div className="single-wall-3d-wrapper">
+              <SingleWallView3D
+                key={wall.id}
+                wall={wall}
+                placedItems={placedItems}
+                onMoveItem={handleMoveItem3D}
+                onOpenDetailItem={(assignmentId) => setDetailAssignmentId(assignmentId)}
+              />
+            </div>
+          </>
+        ) : (
+          <Booth3DView booth={booth} />
+        )
       ) : (
         <>
-          {wall && (
-            <div className="wall-editor-toolbar__controls">
-              <WallColorPicker wall={wall} boothWalls={boothWalls} />
-              <button type="button" onClick={printWallCanvas}>
-                Print Wall
-              </button>
-            </div>
-          )}
-
           <div className="wall-editor-body">
             <aside className="wall-editor-thumbnails" aria-label="All walls in this booth">
               <div className="wall-editor-thumbnails__header">
                 <h2>All Walls</h2>
-                <button type="button" onClick={() => setShowAddWall(true)}>
-                  Add Wall
+                <button
+                  type="button"
+                  className="wall-editor-thumbnails__add"
+                  onClick={() => setShowAddWall(true)}
+                  aria-label="Add wall"
+                  title="Add wall"
+                >
+                  +
                 </button>
               </div>
               <div className="wall-editor-thumbnails__list">
@@ -542,44 +618,55 @@ export function WallDetailPage() {
               </div>
             </aside>
 
-            {wall ? (
-              <WallAssignmentCanvas
-                key={wall.id}
-                wall={wall}
-                placedItems={placedItems}
-                selectedAssignmentId={selectedAssignmentId}
-                onSelect={handleCanvasSelect}
-                onMove={handleMove}
-                onMoveLabel={handleMoveLabel}
-                onTransformEnd={handleTransformEnd}
-                showGrid={showGrid}
-                onToggleGrid={() => setShowGrid((prev) => !prev)}
-              />
-            ) : (
-              <div className="wall-editor-empty">
-                <p>This booth doesn&rsquo;t have any walls yet.</p>
-                <button type="button" onClick={() => setShowAddWall(true)}>
-                  Add Wall
-                </button>
-              </div>
-            )}
+            <div className="wall-editor-main-column">
+              {wall ? (
+                <div className="wall-editor-canvas-column">
+                  <div className="wall-editor-canvas-column__header">
+                    <WallColorPicker wall={wall} boothWalls={boothWalls} />
+                  </div>
+                  <WallAssignmentCanvas
+                    key={wall.id}
+                    wall={wall}
+                    placedItems={placedItems}
+                    selectedAssignmentId={selectedAssignmentId}
+                    onSelect={handleCanvasSelect}
+                    onMove={handleMove}
+                    onMoveLabel={handleMoveLabel}
+                    onTransformEnd={handleTransformEnd}
+                    showGrid={showGrid}
+                    onToggleGrid={() => setShowGrid((prev) => !prev)}
+                  />
+                </div>
+              ) : (
+                <div className="wall-editor-empty">
+                  <p>This booth doesn&rsquo;t have any walls yet.</p>
+                  <button type="button" onClick={() => setShowAddWall(true)}>
+                    Add Wall
+                  </button>
+                </div>
+              )}
+
+              {wall && (
+                <section className="wall-editor-available">
+                  <OnThisWallList
+                    placedItems={placedItems}
+                    selectedAssignmentId={selectedAssignmentId}
+                    onSelect={handleListSelect}
+                  />
+                </section>
+              )}
+            </div>
           </div>
 
           {wall && (
-            <>
-              <WallInventory
-                placedItems={placedItems}
-                selectedAssignmentId={selectedAssignmentId}
-                onSelect={handleListSelect}
-                isOpen={inventoryOpen}
-                onToggle={() => setInventoryOpen((prev) => !prev)}
-              />
-
-              <section>
-                <h2>Available items</h2>
-                <AvailableItemsTray items={availableItems} onSelect={handleAddItem} />
-              </section>
-            </>
+            <SidePanel
+              label="Available items"
+              isOpen={inventoryOpen}
+              onToggle={() => setInventoryOpen((prev) => !prev)}
+            >
+              <h2>Available items</h2>
+              <AvailableItemsTray items={availableItems} onSelect={handleAddItem} />
+            </SidePanel>
           )}
         </>
       )}

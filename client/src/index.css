@@ -222,6 +222,14 @@ h6 {
   padding: 2rem 1rem;
 }
 
+/* With the sidebar collapsed there's extra room, but centering just splits it evenly
+   on both sides of the (max-width-capped) content, leaving a wide, empty-looking gap
+   on the left between the sidebar and the page. Let content hug the sidebar instead. */
+.app-nav--collapsed + .app-content {
+  justify-content: flex-start;
+  padding-left: 3rem;
+}
+
 main {
   width: 100%;
   max-width: 72rem;
@@ -458,17 +466,38 @@ dialog.item-dialog textarea {
 
 .page-toolbar--booth {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+}
+
+.page-toolbar__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.wall-editor-back-button {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid light-dark(#d4d4d8, #3f3f46);
+  border-radius: 50%;
+  background: light-dark(#fff, #18181b);
+  color: light-dark(#52525b, #a1a1aa);
+  text-decoration: none;
+}
+
+.wall-editor-back-button:hover {
+  background: light-dark(#f4f4f5, #27272a);
+  color: inherit;
 }
 
 .page-toolbar__title {
   display: flex;
-  align-items: flex-start;
-  gap: 0.375rem;
-}
-
-.page-toolbar__title h1 {
-  margin: 0 0 0.25rem;
+  flex-direction: column;
 }
 
 .actions-menu {
@@ -775,12 +804,51 @@ dialog.booth-report-dialog {
 }
 
 .booth-3d-canvas-wrapper {
+  position: relative;
   width: 100%;
   height: 100%;
   cursor: grab;
   border: 1px solid light-dark(#d4d4d8, #3f3f46);
   border-radius: 0.75rem;
   overflow: hidden;
+}
+
+.booth-3d-canvas-wrapper:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  border: none;
+  border-radius: 0;
+  background: light-dark(#fff, #18181b);
+}
+
+.booth-3d-fullscreen-button {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid light-dark(#d4d4d8, #3f3f46);
+  border-radius: 0.5rem;
+  background: light-dark(rgb(255 255 255 / 0.85), rgb(24 24 27 / 0.85));
+  color: light-dark(#52525b, #a1a1aa);
+}
+
+.booth-3d-fullscreen-button:hover {
+  background: light-dark(#fff, #18181b);
+  color: inherit;
+}
+
+/* .booth-3d-canvas-wrapper is height:100%, so it needs an ancestor with an
+   explicit height. Without one, the browser sizes it to its content (the
+   canvas), and the canvas's ResizeObserver sizes itself to its container —
+   each measurement nudges the other, growing without bound. */
+.single-wall-3d-wrapper {
+  height: min(38rem, 70vh);
 }
 
 .booth-3d-canvas-wrapper canvas {
@@ -866,45 +934,25 @@ dialog.booth-report-dialog {
   text-align: left;
 }
 
-.breadcrumb {
-  margin-bottom: 1rem;
-}
-
-.breadcrumb ol {
-  list-style: none;
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  margin: 0;
-  padding: 0;
-  font-size: 0.875rem;
-  color: light-dark(#52525b, #a1a1aa);
-}
-
-.breadcrumb li:not(:last-child)::after {
-  content: '/';
-  margin-left: 0.375rem;
-  color: light-dark(#a1a1aa, #52525b);
-}
-
-.breadcrumb a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.breadcrumb a:hover {
-  text-decoration: underline;
-}
-
-/* wall-inventory is a fixed panel pinned to the viewport's right edge (see
-   .wall-inventory below), so it can sit on top of this page's own content
+/* side-panel is a fixed panel pinned to the viewport's right edge (see
+   .side-panel below), so it can sit on top of this page's own content
    instead of pushing it in normal flow. This padding reserves that space
    instead, so nothing here — particularly the other-wall thumbnails — ends
    up hidden underneath it. */
 .wall-detail-page {
+  display: flex;
+  flex-direction: column;
+  /* Anchored to the viewport rather than min-height:100% (a percentage of
+     .app-content's own rendered height) — that percentage chain is circular: if
+     this page's content is even slightly taller than the viewport, .app-layout
+     grows to fit it, which feeds a taller "100%" back down here, stretching
+     .wall-editor-body further than its content actually needs. calc() against
+     100vh (matching .app-content's 2rem top + 2rem bottom padding) breaks the loop. */
+  min-height: calc(100vh - 4rem);
   padding-right: calc(18rem + 1rem);
   transition: padding-right 0.2s ease;
 }
+
 
 .wall-detail-page--inventory-collapsed {
   padding-right: calc(2.5rem + 1rem);
@@ -957,17 +1005,13 @@ dialog.booth-report-dialog {
   font-size: 0.8125rem;
 }
 
-.wall-editor-toolbar__controls {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
-}
-
 .wall-editor-body {
   display: flex;
-  align-items: flex-start;
-  gap: 1.25rem;
+  align-items: stretch;
+  gap: 2.25rem;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
 }
 
 .wall-editor-body .wall-editor-canvas-wrapper {
@@ -975,14 +1019,50 @@ dialog.booth-report-dialog {
   min-width: 0;
 }
 
+.wall-editor-main-column {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.wall-editor-canvas-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.wall-editor-canvas-column__header {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.wall-editor-available {
+  margin-top: auto;
+  padding-top: 1.25rem;
+  min-width: 0;
+}
+
 .wall-editor-thumbnails {
   flex-shrink: 0;
   width: 9rem;
+  /* Bounded independently of the canvas column's own natural height (not just
+     align-items:stretch matching it) — otherwise a booth with many walls can force
+     the whole row, and everything below the canvas, taller than the viewport. */
+  max-height: calc(100vh - 11rem);
+  padding-right: 1rem;
+  border-right: 1px solid light-dark(#e4e4e7, #27272a);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .wall-editor-thumbnails__header {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.5rem;
   margin-bottom: 0.75rem;
 }
@@ -992,11 +1072,33 @@ dialog.booth-report-dialog {
   margin: 0;
 }
 
+.wall-editor-thumbnails__add {
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: light-dark(#e4e4e7, #3f3f46);
+  color: inherit;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.wall-editor-thumbnails__add:hover {
+  background: light-dark(#d4d4d8, #52525b);
+}
+
 .wall-editor-thumbnails__list {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  max-height: 32rem;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 
@@ -1032,11 +1134,35 @@ dialog.booth-report-dialog {
   color: light-dark(#52525b, #a1a1aa);
 }
 
+.wall-editor-booth-row {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
 .wall-editor-booth-label {
   margin: 0;
-  font-size: 0.8125rem;
+  font-family: 'Libertinus Serif', Georgia, serif;
+  font-size: 1.375rem;
   font-weight: 600;
-  color: light-dark(#52525b, #a1a1aa);
+  color: light-dark(#27272a, #e4e4e7);
+}
+
+.wall-editor-name-block {
+  position: relative;
+  margin: 0.375rem 0 0 2.25rem;
+}
+
+.page-toolbar__title h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.125rem;
+}
+
+.wall-editor-tree-connector {
+  position: absolute;
+  top: -0.1rem;
+  left: -1.875rem;
+  color: light-dark(#a1a1aa, #52525b);
 }
 
 .wall-editor-name-row {
@@ -1083,8 +1209,26 @@ dialog.booth-report-dialog {
   cursor: pointer;
 }
 
+.wall-editor-color-picker__apply-all {
+  border-color: light-dark(#fca5a5, #7f1d1d);
+  background: light-dark(#fef2f2, #2a1414);
+  color: light-dark(#b91c1c, #f87171);
+}
+
+.wall-editor-color-picker__apply-all:hover {
+  background: light-dark(#fee2e2, #3a1a1a);
+}
+
 .wall-editor-canvas-wrapper {
+  position: relative;
   width: 100%;
+}
+
+.wall-editor-canvas-wrapper:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  padding: 0.75rem;
+  background: light-dark(#fff, #18181b);
 }
 
 .wall-editor-zoom {
@@ -1103,6 +1247,14 @@ dialog.booth-report-dialog {
   padding: 0.3rem 0.5rem;
 }
 
+/* The fullscreen button's base style (shared with the 3D views) is an absolutely
+   positioned corner overlay — here it sits inline in the toolbar row instead,
+   pushed to the row's far end. */
+.wall-editor-zoom .booth-3d-fullscreen-button {
+  position: static;
+  margin-left: auto;
+}
+
 .wall-editor-canvas {
   display: block;
   max-width: 100%;
@@ -1111,7 +1263,7 @@ dialog.booth-report-dialog {
   cursor: grab;
 }
 
-.wall-inventory {
+.side-panel {
   position: fixed;
   top: 0;
   right: 0;
@@ -1126,11 +1278,11 @@ dialog.booth-report-dialog {
   z-index: 10;
 }
 
-.wall-inventory--collapsed {
+.side-panel--collapsed {
   width: 2.5rem;
 }
 
-.wall-inventory__toggle {
+.side-panel__toggle {
   flex-shrink: 0;
   align-self: flex-start;
   margin: 0.75rem;
@@ -1142,72 +1294,82 @@ dialog.booth-report-dialog {
   padding: 0;
   font-size: 1rem;
   line-height: 1;
+  border: none;
+  background: none;
+  color: light-dark(#71717a, #a1a1aa);
 }
 
-.wall-inventory__content {
+.side-panel__toggle:hover {
+  color: inherit;
+  background: light-dark(#f4f4f5, #27272a);
+  border-radius: 0.375rem;
+}
+
+.side-panel__content {
   flex: 1;
   min-width: 18rem;
   padding: 0 1rem 1rem;
   overflow-y: auto;
 }
 
-.wall-inventory h2 {
+.side-panel h2 {
   margin: 0 0 0.75rem;
   font-size: 1rem;
 }
 
-.wall-inventory ul {
+.wall-editor-on-wall-list {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0.25rem 0.25rem 0.75rem;
   display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
+  overflow-x: auto;
+  gap: 0.75rem;
 }
 
-.wall-inventory-item {
+.on-this-wall-item {
+  flex: 0 0 auto;
+  width: 6rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.625rem;
-  width: 100%;
-  padding: 0.375rem;
+  gap: 0.375rem;
+  padding: 0.5rem;
   border: 1px solid transparent;
-  border-radius: 0.375rem;
-  background: none;
+  border-radius: 0.5rem;
+  background: light-dark(#fff, #18181b);
   cursor: pointer;
-  text-align: left;
+  text-align: center;
   font: inherit;
   color: inherit;
 }
 
-.wall-inventory-item:hover {
+.on-this-wall-item:hover {
   background: light-dark(#f4f4f5, #27272a);
 }
 
-.wall-inventory-item--selected {
+.on-this-wall-item--selected {
   border-color: #2563eb;
   background: light-dark(#eff6ff, #1e3a5f);
 }
 
-.wall-inventory-item img,
-.wall-inventory-item__placeholder {
-  width: 2.5rem;
-  height: 2.5rem;
+.on-this-wall-item img,
+.on-this-wall-item__placeholder {
+  width: 5rem;
+  height: 5rem;
   object-fit: cover;
   border-radius: 0.25rem;
   background: light-dark(#e4e4e7, #27272a);
-  flex-shrink: 0;
 }
 
-.wall-inventory-item__title {
-  font-size: 0.875rem;
+.on-this-wall-item__title {
+  font-size: 0.75rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  width: 100%;
 }
 
-.wall-inventory-item__sold {
-  flex-shrink: 0;
+.on-this-wall-item__sold {
   font-size: 0.6875rem;
   font-weight: 700;
   color: #fff;
@@ -1256,6 +1418,32 @@ dialog.booth-report-dialog {
   text-overflow: ellipsis;
   white-space: nowrap;
   width: 100%;
+}
+
+/* Inside the side panel there's no horizontal room to spare, so items stack in a
+   vertical list (thumbnail + label side by side) instead of the horizontal-scroll
+   row used elsewhere (e.g. the 3D view's assignment panel). */
+.side-panel__content .available-items-tray {
+  flex-direction: column;
+  overflow-x: visible;
+}
+
+.side-panel__content .available-item {
+  flex-direction: row;
+  width: 100%;
+  text-align: left;
+}
+
+.side-panel__content .available-item img,
+.side-panel__content .available-item__placeholder {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+}
+
+.side-panel__content .available-item__label {
+  text-align: left;
+  white-space: normal;
 }
 
 .login-page {
@@ -2058,15 +2246,14 @@ dialog.item-detail-dialog::backdrop {
   }
 
   /* Wall print view: everything on the wall detail page except the canvas
-     itself -- breadcrumb, toolbar, all-walls thumbnails, the fixed
-     inventory panel, the available-items tray, and any open item dialog. */
-  .wall-detail-page .breadcrumb,
+     itself -- toolbar, all-walls thumbnails, the fixed inventory panel,
+     the available-items tray, and any open item dialog. */
   .wall-detail-page .page-toolbar--booth,
-  .wall-detail-page .wall-editor-toolbar__controls,
+  .wall-detail-page .wall-editor-canvas-column__header,
   .wall-detail-page .wall-editor-zoom,
   .wall-detail-page .wall-editor-thumbnails,
-  .wall-detail-page .wall-inventory,
-  .wall-detail-page > section,
+  .wall-detail-page .side-panel,
+  .wall-detail-page .wall-editor-available,
   dialog.item-dialog {
     display: none !important;
   }

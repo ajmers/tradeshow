@@ -61,7 +61,12 @@ export function WallColorPicker({ wall, boothWalls }: WallColorPickerProps) {
       )}
 
       {boothWalls.length > 1 && (
-        <button type="button" onClick={handleApplyToAll} disabled={updateWall.isPending}>
+        <button
+          type="button"
+          className="wall-editor-color-picker__apply-all"
+          onClick={handleApplyToAll}
+          disabled={updateWall.isPending}
+        >
           Apply to all walls in booth
         </button>
       )}
