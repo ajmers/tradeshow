@@ -569,8 +569,14 @@ export function WallDetailPage() {
         singleWallView && wall ? (
           <>
             <div className="booth-3d-toolbar">
-              <button type="button" onClick={() => setSingleWallView(false)}>
-                ← View whole booth
+              <button
+                type="button"
+                onClick={() => {
+                  setSingleWallView(false)
+                  setViewMode('2d')
+                }}
+              >
+                ← Back to 2D
               </button>
               <span>{wall.fields['Wall Name'] ?? 'Untitled wall'}</span>
             </div>
