@@ -217,6 +217,11 @@ h6 {
 
 .app-content {
   flex: 1;
+  /* A flex item's default min-width is auto (content's own min-content size), not 0 —
+     without this, .app-content refuses to shrink below whatever its widest descendant
+     wants to be (e.g. a page with a fixed-position side panel reserving width via
+     padding), which can inflate this — and everything below it — past the viewport. */
+  min-width: 0;
   display: flex;
   justify-content: center;
   padding: 2rem 1rem;
@@ -942,6 +947,13 @@ dialog.booth-report-dialog {
 .wall-detail-page {
   display: flex;
   flex-direction: column;
+  /* This page has its own fixed-position side panel to clear (via padding-right
+     below), unlike other pages — the global `main { max-width: 72rem }` meant for
+     readable text width instead left a dead gap between content and the panel on
+     wide screens, since the panel sits at the true viewport edge regardless of
+     where the width-capped, centered main box ends. */
+  max-width: none;
+  min-width: 0;
   /* Anchored to the viewport rather than min-height:100% (a percentage of
      .app-content's own rendered height) — that percentage chain is circular: if
      this page's content is even slightly taller than the viewport, .app-layout
