@@ -4,6 +4,7 @@ defmodule Tradeshow.WallsTest do
   test "delete_wall deletes assignments on the wall, then the wall iteself" do
     base_id = "appTEST123"
     wall_id = "recWALL123"
+    test_pid = self()
 
     Req.Test.stub(Tradeshow.Airtable, fn conn ->
       case {conn.method, conn.path_info} do
@@ -15,14 +16,20 @@ defmodule Tradeshow.WallsTest do
             ]
           })
 
-        {"DELETE", ["v0", ^base_id, "Wall%20Assignments", "recAssign1"]} ->
+        {"DELETE", ["v0", ^base_id, "Wall%20Assignments", id]} ->
+          send(test_pid, {:deleted_assignment, id})
           Req.Test.json(conn, %{"id" => "recAssign1", "deleted" => true})
 
         {"DELETE", ["v0", ^base_id, "Walls", ^wall_id]} ->
+          send(test_pid, {:deleted_wall, wall_id})
           Req.Test.json(conn, %{"id" => wall_id, "deleted" => true})
       end
     end)
 
     assert Tradeshow.Walls.delete_wall(base_id, wall_id) == :ok
+
+    assert_received {:deleted_assignment, "recAssign1"}
+    assert_received {:deleted_wall, ^wall_id}
+    refute_received {:deleted_assignment, "recAssign2"}
   end
 end
