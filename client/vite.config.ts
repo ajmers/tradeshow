@@ -28,51 +28,8 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // Routes migrated to the Phoenix API go here, above the generic '/api'
-      // fallback below — Vite matches proxy rules in order, so the more
-      // specific path must come first or '/api' would swallow it.
-      '/api/health': {
-        target: 'http://localhost:4000',
-        changeOrigin: true,
-      },
-      '/api/admin': {
-        target: 'http://localhost:4000',
-        changeOrigin: true,
-      },
-      '/api/consigners': {
-        target: 'http://localhost:4000',
-        changeOrigin: true,
-      },
-      '/api/base': {
-        target: 'http://localhost:4000',
-        changeOrigin: true,
-      },
-      '/api/booths': {
-        target: 'http://localhost:4000',
-        changeOrigin: true,
-      },
-      '/api/walls': {
-        target: 'http://localhost:4000',
-        changeOrigin: true,
-      },
-      '/api/sales': {
-        target: 'http://localhost:4000',
-        changeOrigin: true,
-      },
-      '/api/items': {
-        target: 'http://localhost:4000',
-        changeOrigin: true,
-      },
-      '/api/wall-assignments': {
-        target: 'http://localhost:4000',
-        changeOrigin: true,
-      },
-      '/api/floor-placements': {
-        target: 'http://localhost:4000',
-        changeOrigin: true,
-      },
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:4000',
         changeOrigin: true,
       },
     },

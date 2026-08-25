@@ -16,3 +16,5 @@ services:
         sync: false
       - key: AIRTABLE_PAT
         sync: false
+      - key: BETA_ACCESS_CODE
+        sync: false

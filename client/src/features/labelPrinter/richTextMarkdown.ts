@@ -93,7 +93,7 @@ export function htmlToMarkdown(html: string): string {
 
   return lines
     .join('')
-    .replace(/ /g, ' ') // contentEditable often inserts &nbsp; in place of trailing/leading spaces
+    .replace(/\u00A0/g, ' ') // contentEditable often inserts &nbsp; in place of trailing/leading spaces
     .replace(/\n{3,}/g, '\n\n')
     .trim()
 }

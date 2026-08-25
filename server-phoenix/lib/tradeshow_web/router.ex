@@ -16,6 +16,7 @@ defmodule TradeshowWeb.Router do
   scope "/api", TradeshowWeb do
     pipe_through :api
     get "/health", HealthController, :check
+    post "/signup", SignupController, :create
   end
 
   scope "/api", TradeshowWeb do
