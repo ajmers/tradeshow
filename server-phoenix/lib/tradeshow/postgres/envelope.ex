@@ -16,8 +16,19 @@ defmodule Tradeshow.Postgres.Envelope do
   def unwrap([]), do: nil
   def unwrap([id | _]), do: id
 
+  # Airtable never returns a key for an empty field — it omits it entirely,
+  # rather than sending it as null. The shared zod schemas (itemFieldsSchema
+  # etc.) are written around that: `.optional()` means "key may be absent,"
+  # not "key may be null". Postgres columns are `null` when unset, so every
+  # *.Postgres `to_record` needs to drop those before wrapping the envelope,
+  # or a freshly-created record with blank optional fields fails to parse on
+  # the client.
   def to_record(row, fields) do
-    %{"id" => row["id"], "createdTime" => row["created_at"], "fields" => fields}
+    %{
+      "id" => row["id"],
+      "createdTime" => row["created_at"],
+      "fields" => Enum.reject(fields, fn {_key, value} -> is_nil(value) end) |> Map.new()
+    }
   end
 
   # Only puts `column` into `attrs` when `key` is actually present in the
