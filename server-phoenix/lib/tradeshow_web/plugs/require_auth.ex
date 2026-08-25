@@ -1,5 +1,6 @@
 defmodule TradeshowWeb.Plugs.RequireAuth do
   import Plug.Conn
+  require Logger
 
   def init(opts), do: opts
 
@@ -22,7 +23,13 @@ defmodule TradeshowWeb.Plugs.RequireAuth do
     end
   end
 
-  defp fetch_profile(token, user_id) do
+  # Resolves the user's tenant: {:airtable, base_id} if an admin has assigned
+  # one, {:postgres, user_id} otherwise (no profile row, or one with no base
+  # assigned yet) — every authenticated user gets one or the other, there's no
+  # longer a "blocked" outcome. A genuine failure to reach Supabase at all is
+  # the only thing treated as an error here; "no matching profile row" is a
+  # normal, expected response for a Postgres-tenant user.
+  defp fetch_tenant(token, user_id) do
     headers = [
       {"authorization", "Bearer #{token}"},
       {"apikey", supabase_key()},
@@ -35,36 +42,37 @@ defmodule TradeshowWeb.Plugs.RequireAuth do
          ) do
       {:ok, %{status: 200, body: %{"airtable_base_id" => base_id} = profile}}
       when is_binary(base_id) ->
-        {:ok, profile}
+        {:ok, {:airtable, base_id}, profile["feature_flags"] || %{}}
 
-      _ ->
-        {:error, :no_base}
+      {:ok, %{status: _status}} ->
+        {:ok, {:postgres, user_id}, %{}}
+
+      {:error, reason} ->
+        Logger.error("Failed to reach Supabase for profile lookup: #{inspect(reason)}")
+        {:error, :profile_fetch_failed}
     end
   end
 
   def call(conn, _opts) do
     with {:ok, token} <- bearer_token(conn),
          {:ok, user} <- fetch_user(token),
-         {:ok, profile} <- fetch_profile(token, user["id"]) do
-      # success path: assign stuff to conn
+         {:ok, tenant, feature_flags} <- fetch_tenant(token, user["id"]) do
       conn
-      |> assign(:airtable_base_id, profile["airtable_base_id"])
+      |> assign(:tenant, tenant)
+      |> assign(:user_token, token)
       |> assign(:is_admin, get_in(user, ["app_metadata", "is_admin"]) == true)
       |> assign(
         :feature_flags,
-        Map.merge(
-          %{"boothPlanner3d" => true, "labelPrinter" => true},
-          profile["feature_flags"] || %{}
-        )
+        Map.merge(%{"boothPlanner3d" => true, "labelPrinter" => true}, feature_flags)
       )
     else
       {:error, :unauthorized} ->
         conn |> put_status(401) |> Phoenix.Controller.json(%{error: "Unauthorized"}) |> halt()
 
-      {:error, :no_base} ->
+      {:error, :profile_fetch_failed} ->
         conn
-        |> put_status(403)
-        |> Phoenix.Controller.json(%{error: "No Airtable base configured for this account"})
+        |> put_status(502)
+        |> Phoenix.Controller.json(%{error: "Failed to look up account"})
         |> halt()
     end
   end

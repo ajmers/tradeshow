@@ -11,6 +11,9 @@
     { "source": "/api/walls/:path*", "destination": "https://tradeshow-1.onrender.com/api/walls/:path*" },
     { "source": "/api/booths/:path*", "destination": "https://tradeshow-1.onrender.com/api/booths/:path*" },
     { "source": "/api/admin/:path*", "destination": "https://tradeshow-1.onrender.com/api/admin/:path*" },
+    { "source": "/api/items/:path*", "destination": "https://tradeshow-1.onrender.com/api/items/:path*" },
+    { "source": "/api/wall-assignments/:path*", "destination": "https://tradeshow-1.onrender.com/api/wall-assignments/:path*" },
+    { "source": "/api/floor-placements/:path*", "destination": "https://tradeshow-1.onrender.com/api/floor-placements/:path*" },
     { "source": "/api/:path*", "destination": "/api" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
