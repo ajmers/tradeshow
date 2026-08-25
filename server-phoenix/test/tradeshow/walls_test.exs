@@ -26,7 +26,7 @@ defmodule Tradeshow.WallsTest do
       end
     end)
 
-    assert Tradeshow.Walls.delete_wall(base_id, wall_id) == :ok
+    assert Tradeshow.Walls.delete_wall({:airtable, base_id}, "token", wall_id) == :ok
 
     assert_received {:deleted_assignment, "recAssign1"}
     assert_received {:deleted_wall, ^wall_id}

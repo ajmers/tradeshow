@@ -32,6 +32,19 @@ defmodule TradeshowWeb.Router do
     post "/booths", BoothsController, :create
     patch "/booths/:id", BoothsController, :update
     delete "/booths/:id", BoothsController, :delete
+    get "/items", ItemsController, :index
+    post "/items", ItemsController, :create
+    patch "/items/:id", ItemsController, :update
+    delete "/items/:id", ItemsController, :delete
+    post "/items/:id/photos", ItemsController, :upload_photo
+    get "/wall-assignments", WallAssignmentsController, :index
+    post "/wall-assignments", WallAssignmentsController, :create
+    patch "/wall-assignments/:id", WallAssignmentsController, :update
+    delete "/wall-assignments/:id", WallAssignmentsController, :delete
+    get "/floor-placements", FloorPlacementsController, :index
+    post "/floor-placements", FloorPlacementsController, :create
+    patch "/floor-placements/:id", FloorPlacementsController, :update
+    delete "/floor-placements/:id", FloorPlacementsController, :delete
   end
 
   scope "/api", TradeshowWeb do

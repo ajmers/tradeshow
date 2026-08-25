@@ -2,7 +2,7 @@ defmodule TradeshowWeb.BaseController do
   use TradeshowWeb, :controller
 
   def show(conn, _params) do
-    case Tradeshow.Airtable.get_base_info(conn.assigns.airtable_base_id) do
+    case base_name(conn.assigns.tenant) do
       {:ok, name} ->
         json(conn, %{
           name: name,
@@ -16,4 +16,7 @@ defmodule TradeshowWeb.BaseController do
         |> json(%{error: "Failed to load base info"})
     end
   end
+
+  defp base_name({:airtable, base_id}), do: Tradeshow.Airtable.get_base_info(base_id)
+  defp base_name({:postgres, _user_id}), do: {:ok, "My Workspace"}
 end

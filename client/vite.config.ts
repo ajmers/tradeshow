@@ -43,6 +43,34 @@ export default defineConfig({
         target: 'http://localhost:4000',
         changeOrigin: true,
       },
+      '/api/base': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
+      '/api/booths': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
+      '/api/walls': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
+      '/api/sales': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
+      '/api/items': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
+      '/api/wall-assignments': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
+      '/api/floor-placements': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,

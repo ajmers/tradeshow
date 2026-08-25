@@ -102,6 +102,54 @@ defmodule Tradeshow.Airtable do
     end
   end
 
+  def get_record(base_id, table, id) do
+    case Req.get(
+           "https://api.airtable.com/v0/#{base_id}/#{URI.encode(table)}/#{id}",
+           Keyword.merge(
+             [headers: [{"authorization", "Bearer #{airtable_pat()}"}]],
+             req_opts()
+           )
+         ) do
+      {:ok, %{status: 200, body: record}} ->
+        {:ok, record}
+
+      {:ok, %{status: status, body: body}} ->
+        Logger.error("Airtable get_record failed: status=#{status} body=#{inspect(body)}")
+        {:error, :airtable_request_failed}
+
+      {:error, reason} ->
+        Logger.error("Airtable get_record request error: #{inspect(reason)}")
+        {:error, :airtable_request_failed}
+    end
+  end
+
+  # Unlike every other call here, Airtable's response for this endpoint keys
+  # `fields` by field ID rather than field name, so callers should re-fetch
+  # the record via get_record/3 afterward rather than trusting this response.
+  def upload_attachment(base_id, record_id, field_name, attachment) do
+    case Req.post(
+           "https://content.airtable.com/v0/#{base_id}/#{record_id}/#{URI.encode(field_name)}/uploadAttachment",
+           Keyword.merge(
+             [
+               headers: [{"authorization", "Bearer #{airtable_pat()}"}],
+               json: attachment
+             ],
+             req_opts()
+           )
+         ) do
+      {:ok, %{status: status}} when status in 200..299 ->
+        :ok
+
+      {:ok, %{status: status, body: body}} ->
+        Logger.error("Airtable upload_attachment failed: status=#{status} body=#{inspect(body)}")
+        {:error, :airtable_request_failed}
+
+      {:error, reason} ->
+        Logger.error("Airtable upload_attachment request error: #{inspect(reason)}")
+        {:error, :airtable_request_failed}
+    end
+  end
+
   def update_record(base_id, table, id, fields) do
     case Req.patch(
            "https://api.airtable.com/v0/#{base_id}/#{URI.encode(table)}/#{id}",
