@@ -12,6 +12,10 @@ export const wallFieldsSchema = z.object({
   // Nullable (not just optional) so a wall can be explicitly cleared off a booth's
   // 3D surface — Airtable requires an explicit `null` PATCH to unset a select field.
   'Booth Surface': z.enum(['Front', 'Back', 'Left', 'Right']).nullable().optional(),
+  // Wall-level default for item labels — off unless a wall opts in. A placed
+  // item's own "Label Hidden"/"Label Shown" (see wallAssignment.ts) always
+  // overrides this, in either direction.
+  'Show Labels': z.boolean().optional(),
 })
 
 export const wallSchema = z.object({

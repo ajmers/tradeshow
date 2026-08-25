@@ -8,7 +8,7 @@ import { useWallAssignments } from '@/hooks/useWallAssignments'
 import { useSales } from '@/hooks/useSales'
 import { useBaseInfo } from '@/hooks/useBaseInfo'
 import { useDeleteBooth } from '@/hooks/useBoothMutations'
-import { useDeleteWall } from '@/hooks/useWallMutations'
+import { useDeleteWall, useUpdateWall } from '@/hooks/useWallMutations'
 import {
   useCreateWallAssignment,
   useUpdateWallAssignment,
@@ -183,6 +183,7 @@ export function WallDetailPage() {
   const updateAssignment = useUpdateWallAssignment()
   const deleteAssignment = useDeleteWallAssignment()
   const deleteWall = useDeleteWall()
+  const updateWall = useUpdateWall()
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null)
   const [detailAssignmentId, setDetailAssignmentId] = useState<string | null>(null)
   const [showGrid, setShowGrid] = useState(true)
@@ -317,6 +318,23 @@ export function WallDetailPage() {
       },
     })
   }
+
+  const handleToggleShowLabels = () => {
+    if (!wall) {
+      return Promise.resolve()
+    }
+    return updateWall.mutateAsync({
+      id: wall.id,
+      input: { 'Show Labels': !wall.fields['Show Labels'] },
+    })
+  }
+
+  const handleApplyShowLabelsToAllWalls = () =>
+    Promise.all(
+      boothWalls.map((boothWall) =>
+        updateWall.mutateAsync({ id: boothWall.id, input: { 'Show Labels': true } }),
+      ),
+    )
 
   const handleAddItem = (itemId: string) => {
     if (!wall) {
@@ -641,6 +659,8 @@ export function WallDetailPage() {
                     onTransformEnd={handleTransformEnd}
                     showGrid={showGrid}
                     onToggleGrid={() => setShowGrid((prev) => !prev)}
+                    onToggleShowLabels={handleToggleShowLabels}
+                    onApplyShowLabelsToAllWalls={handleApplyShowLabelsToAllWalls}
                   />
                 </div>
               ) : (
@@ -694,11 +714,18 @@ export function WallDetailPage() {
               handleMoveToWall(detailItem.assignment, detailItem.item, targetWallId),
           }}
           labelOptions={{
-            isHidden: Boolean(detailItem.assignment.fields['Label Hidden']),
-            onToggleHidden: () =>
+            state: detailItem.assignment.fields['Label Hidden']
+              ? 'hidden'
+              : detailItem.assignment.fields['Label Shown']
+                ? 'shown'
+                : 'default',
+            onSetState: (next) =>
               updateAssignment.mutateAsync({
                 id: detailItem.assignment.id,
-                input: { 'Label Hidden': !detailItem.assignment.fields['Label Hidden'] },
+                input: {
+                  'Label Hidden': next === 'hidden',
+                  'Label Shown': next === 'shown',
+                },
               }),
           }}
         />

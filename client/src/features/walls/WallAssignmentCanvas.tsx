@@ -56,6 +56,8 @@ interface WallAssignmentCanvasProps {
   ) => void
   showGrid?: boolean
   onToggleGrid: () => void
+  onToggleShowLabels: () => Promise<unknown>
+  onApplyShowLabelsToAllWalls: () => Promise<unknown>
 }
 
 export function WallAssignmentCanvas({
@@ -68,6 +70,8 @@ export function WallAssignmentCanvas({
   onTransformEnd,
   showGrid = true,
   onToggleGrid,
+  onToggleShowLabels,
+  onApplyShowLabelsToAllWalls,
 }: WallAssignmentCanvasProps) {
   const nodeRefs = useRef(new Map<string, Konva.Group>())
   const transformerRef = useRef<Konva.Transformer>(null)
@@ -80,10 +84,30 @@ export function WallAssignmentCanvas({
   } = useFullscreenToggle<HTMLDivElement>()
   const [availableSize, setAvailableSize] = useState(DEFAULT_AVAILABLE_SIZE)
   const [zoom, setZoom] = useState(1)
+  const [togglingShowLabels, setTogglingShowLabels] = useState(false)
+  const [applyingToAllWalls, setApplyingToAllWalls] = useState(false)
   // When zoom changes via a button/wheel, this captures where the view was (as a
   // fraction of scrollable space) so the recentering effect below can restore roughly
   // the same view instead of snapping back to the middle of the wall every time.
   const pendingScrollFraction = useRef<{ x: number; y: number } | null>(null)
+
+  async function handleToggleShowLabels() {
+    setTogglingShowLabels(true)
+    try {
+      await onToggleShowLabels()
+    } finally {
+      setTogglingShowLabels(false)
+    }
+  }
+
+  async function handleApplyShowLabelsToAllWalls() {
+    setApplyingToAllWalls(true)
+    try {
+      await onApplyShowLabelsToAllWalls()
+    } finally {
+      setApplyingToAllWalls(false)
+    }
+  }
 
   function adjustZoom(updater: (current: number) => number) {
     const container = containerRef.current
@@ -223,6 +247,7 @@ export function WallAssignmentCanvas({
   const canvasWidth = wallWidth + marginX * 2
   const canvasHeight = wallHeight + marginY * 2
   const wallFill = fields['Wall Color']?.trim() || '#e4e4e7'
+  const wallShowsLabels = Boolean(fields['Show Labels'])
 
   return (
     <div className="wall-editor-canvas-wrapper" ref={wrapperRef}>
@@ -249,6 +274,25 @@ export function WallAssignmentCanvas({
         <button type="button" className="wall-editor-zoom__gridlines" onClick={onToggleGrid}>
           {showGrid ? 'Hide gridlines' : 'Show gridlines'}
         </button>
+        <button
+          type="button"
+          className="wall-editor-zoom__labels"
+          onClick={handleToggleShowLabels}
+          disabled={togglingShowLabels}
+        >
+          {wallShowsLabels ? 'Hide labels' : 'Show labels'}
+        </button>
+        {!wallShowsLabels && (
+          <button
+            type="button"
+            className="wall-editor-zoom__labels-all"
+            onClick={handleApplyShowLabelsToAllWalls}
+            disabled={applyingToAllWalls}
+            title="Turn on Show Labels for every wall in this booth"
+          >
+            {applyingToAllWalls ? 'Applying…' : 'Show labels on all walls'}
+          </button>
+        )}
         <FullscreenButton isFullscreen={isFullscreen} onToggle={toggleFullscreen} />
       </div>
       <div
@@ -304,6 +348,7 @@ export function WallAssignmentCanvas({
                   assignment={assignment}
                   item={item}
                   scale={scale}
+                  wallShowsLabels={wallShowsLabels}
                   interactive
                   onMove={onMoveLabel}
                 />

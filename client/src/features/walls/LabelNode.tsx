@@ -19,6 +19,9 @@ interface LabelNodeProps {
   assignment: WallAssignment
   item: Item
   scale: number
+  // The wall's own "Show Labels" default — this item's own Label
+  // Hidden/Label Shown always overrides it, in either direction.
+  wallShowsLabels: boolean
   interactive?: boolean
   onMove?: (assignmentId: string, xInches: number, yInches: number) => void
 }
@@ -29,9 +32,18 @@ interface LabelNodeProps {
 // the wall and the art, so an artificially inflated label would misrepresent
 // exactly the thing this is for. Zoom in (the canvas already supports it) to
 // read a label at a given moment; the canvas itself stays accurate throughout.
-export function LabelNode({ assignment, item, scale, interactive = false, onMove }: LabelNodeProps) {
+export function LabelNode({
+  assignment,
+  item,
+  scale,
+  wallShowsLabels,
+  interactive = false,
+  onMove,
+}: LabelNodeProps) {
   const lines = labelLinesForItem(item)
-  if (lines.length === 0 || assignment.fields['Label Hidden']) {
+  const hidden = Boolean(assignment.fields['Label Hidden'])
+  const shown = Boolean(assignment.fields['Label Shown']) || wallShowsLabels
+  if (lines.length === 0 || hidden || !shown) {
     return null
   }
 

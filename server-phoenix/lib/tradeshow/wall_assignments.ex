@@ -83,6 +83,7 @@ defmodule Tradeshow.WallAssignments.Postgres do
     |> Envelope.put_field(fields, "Label X Position", "label_x_position")
     |> Envelope.put_field(fields, "Label Y Position", "label_y_position")
     |> Envelope.put_field(fields, "Label Hidden", "label_hidden")
+    |> Envelope.put_field(fields, "Label Shown", "label_shown")
     |> Envelope.put_field(fields, "Notes", "notes")
     |> Envelope.put_field(fields, "Order", "order")
     |> maybe_put_ref(fields, "Wall", "wall_id")
@@ -110,6 +111,7 @@ defmodule Tradeshow.WallAssignments.Postgres do
       "Label X Position" => row["label_x_position"],
       "Label Y Position" => row["label_y_position"],
       "Label Hidden" => row["label_hidden"],
+      "Label Shown" => row["label_shown"],
       "Notes" => row["notes"],
       "Order" => row["order"]
     })

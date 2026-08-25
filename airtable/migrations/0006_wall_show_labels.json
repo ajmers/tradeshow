@@ -1,0 +1,17 @@
+{
+  "description": "Adds a per-wall 'Show Labels' default (off unless a wall opts in) and a per-item 'Label Shown' override, alongside the existing 'Label Hidden' override on Wall Assignments.",
+  "fields": [
+    {
+      "table": "Walls",
+      "name": "Show Labels",
+      "type": "checkbox",
+      "options": { "icon": "check", "color": "grayBright" }
+    },
+    {
+      "table": "Wall Assignments",
+      "name": "Label Shown",
+      "type": "checkbox",
+      "options": { "icon": "check", "color": "grayBright" }
+    }
+  ]
+}

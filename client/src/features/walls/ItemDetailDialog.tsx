@@ -34,9 +34,25 @@ interface MoveOptions {
   onMove: (targetWallId: string) => Promise<unknown>
 }
 
+export type LabelState = 'default' | 'shown' | 'hidden'
+
 interface LabelOptions {
-  isHidden: boolean
-  onToggleHidden: () => Promise<unknown>
+  // "default" follows the wall's own Show Labels setting; "shown"/"hidden"
+  // force this item's label regardless of it.
+  state: LabelState
+  onSetState: (next: LabelState) => Promise<unknown>
+}
+
+const NEXT_LABEL_STATE: Record<LabelState, LabelState> = {
+  default: 'shown',
+  shown: 'hidden',
+  hidden: 'default',
+}
+
+const LABEL_STATE_TEXT: Record<LabelState, string> = {
+  default: 'Label: Default',
+  shown: 'Label: Shown',
+  hidden: 'Label: Hidden',
 }
 
 interface ItemDetailDialogProps {
@@ -136,7 +152,7 @@ export function ItemDetailDialog({
     }
     setTogglingLabel(true)
     try {
-      await labelOptions.onToggleHidden()
+      await labelOptions.onSetState(NEXT_LABEL_STATE[labelOptions.state])
     } finally {
       setTogglingLabel(false)
     }
@@ -235,9 +251,14 @@ export function ItemDetailDialog({
               </div>
             )}
             {labelOptions && (
-              <button type="button" onClick={handleToggleLabel} disabled={togglingLabel}>
+              <button
+                type="button"
+                onClick={handleToggleLabel}
+                disabled={togglingLabel}
+                title="Cycles between following the wall's default, always showing, and always hiding this item's label"
+              >
                 <TagIcon />
-                {togglingLabel ? 'Updating…' : labelOptions.isHidden ? 'Add Label' : 'Remove Label'}
+                {togglingLabel ? 'Updating…' : LABEL_STATE_TEXT[labelOptions.state]}
               </button>
             )}
             {!fields['Is Prop'] && (

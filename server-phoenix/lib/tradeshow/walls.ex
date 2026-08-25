@@ -95,6 +95,7 @@ defmodule Tradeshow.Walls.Postgres do
     |> Envelope.put_field(fields, "Description", "description")
     |> Envelope.put_field(fields, "Location", "location")
     |> Envelope.put_field(fields, "Booth Surface", "booth_surface")
+    |> Envelope.put_field(fields, "Show Labels", "show_labels")
     |> maybe_put_booth_id(fields)
   end
 
@@ -116,7 +117,8 @@ defmodule Tradeshow.Walls.Postgres do
       "Description" => row["description"],
       "Location" => row["location"],
       "Booths" => Envelope.wrap(row["booth_id"]),
-      "Booth Surface" => row["booth_surface"]
+      "Booth Surface" => row["booth_surface"],
+      "Show Labels" => row["show_labels"]
     })
   end
 end
