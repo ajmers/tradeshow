@@ -78,7 +78,7 @@ export function WallFormDialog({ boothId, onClose }: WallFormDialogProps) {
           <label>
             Unit
             <select name="Unit of Measure" defaultValue="">
-              <option value="">—</option>
+              <option value="">ft</option>
               <option value="inches">inches</option>
               <option value="centimeters">centimeters</option>
               <option value="cm">cm</option>
