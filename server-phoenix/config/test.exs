@@ -1,0 +1,24 @@
+import Config
+
+# We don't run a server during test. If one is required,
+# you can enable the server option below.
+config :tradeshow, TradeshowWeb.Endpoint,
+  http: [ip: {127, 0, 0, 1}, port: 4002],
+  secret_key_base: "yzCbld89dwJ069Mz4msIY3jWewmGAUjaumY7gPtQWK18pq9IgEnOWySU+jSIU+ty",
+  server: false
+
+# In test we don't send emails
+config :tradeshow, Tradeshow.Mailer, adapter: Swoosh.Adapters.Test
+
+# Disable swoosh api client as it is only required for production adapters
+config :swoosh, :api_client, false
+
+# Print only warnings and errors during test
+config :logger, level: :warning
+
+# Initialize plugs at runtime for faster test compilation
+config :phoenix, :plug_init_mode, :runtime
+
+# Route Tradeshow.Airtable's Req calls through a Req.Test stub instead of the
+# real network — each test controls the fake response via Req.Test.stub/2.
+config :tradeshow, :airtable_req_opts, plug: {Req.Test, Tradeshow.Airtable}
