@@ -33,6 +33,11 @@ if config_env() != :prod do
     secret_key: Dotenvy.env!("SUPABASE_SECRET_KEY", :string!)
 
   config :tradeshow, :airtable, pat: Dotenvy.env!("AIRTABLE_PAT", :string!)
+
+  # Unlike the vars above, this one is allowed to be unset — Tradeshow.Signup
+  # treats a missing/blank code as "signup disabled" rather than raising, so
+  # local dev doesn't require opting into beta-gating to boot.
+  config :tradeshow, :beta_access_code, Dotenvy.env!("BETA_ACCESS_CODE", :string, nil)
 else
   config :tradeshow, :supabase,
     url: System.get_env("SUPABASE_URL"),
@@ -40,6 +45,7 @@ else
     secret_key: System.get_env("SUPABASE_SECRET_KEY")
 
   config :tradeshow, :airtable, pat: System.get_env("AIRTABLE_PAT")
+  config :tradeshow, :beta_access_code, System.get_env("BETA_ACCESS_CODE")
 end
 
 if config_env() == :prod do

@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { NavLink, Outlet, matchPath, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useBaseInfo } from '@/hooks/useBaseInfo'
-import { useLabelLogo } from '@/hooks/useLabelLogo'
 import { HealthStatus } from '@/features/health/HealthStatus'
 import { SignOutButton } from '@/features/auth/SignOutButton'
 import { UserMenu } from '@/features/auth/UserMenu'
@@ -123,7 +122,6 @@ function useLastBoothId(userId: string | undefined): string | undefined {
 export function AppLayout() {
   const { session } = useAuth()
   const { data: baseInfo } = useBaseInfo()
-  const { data: labelLogo } = useLabelLogo()
   const lastBoothId = useLastBoothId(session?.user.id)
   const [collapsed, setCollapsed] = useState(readStoredNavCollapsed)
 
@@ -186,17 +184,9 @@ export function AppLayout() {
                 </li>
               </ul>
             )}
-            {true || baseInfo?.isAdmin ? (
-              <div className="app-nav__status">
-                <HealthStatus />
-              </div>
-            ) : (
-              labelLogo && (
-                <div className="app-nav__status">
-                  <img src={labelLogo ?? undefined} alt="" className="app-nav__status-logo" />
-                </div>
-              )
-            )}
+            <div className="app-nav__status">
+              <HealthStatus />
+            </div>
             <div className="app-nav__footer">
               {baseInfo?.name && <p className="app-nav__base">{baseInfo.name}</p>}
               {session?.user.email && <UserMenu email={session.user.email} />}
