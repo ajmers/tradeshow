@@ -11,8 +11,16 @@ defmodule TradeshowWeb.Plugs.RequireAuth do
     case Req.get(supabase_url() <> "/auth/v1/user",
            headers: [{"authorization", "Bearer #{token}"}, {"apikey", supabase_key()}]
          ) do
-      {:ok, %{status: 200, body: user}} -> {:ok, user}
-      _ -> {:error, :unauthorized}
+      {:ok, %{status: 200, body: user}} ->
+        {:ok, user}
+
+      {:ok, %{status: status, body: body}} ->
+        Logger.warning("Supabase rejected user token: status=#{status} body=#{inspect(body)}")
+        {:error, :unauthorized}
+
+      {:error, reason} ->
+        Logger.error("Failed to reach Supabase for user lookup: #{inspect(reason)}")
+        {:error, :unauthorized}
     end
   end
 
