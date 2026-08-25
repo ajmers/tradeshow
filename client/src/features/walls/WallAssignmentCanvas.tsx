@@ -7,7 +7,8 @@ import { wallDimensionToInches } from '@/features/walls/wallScale'
 import { PlacedItemNode } from '@/features/walls/PlacedItemNode'
 import { LabelNode } from '@/features/walls/LabelNode'
 import { WallGrid } from '@/features/walls/WallGrid'
-import { FullscreenButton, useFullscreenToggle } from '@/features/walls/FullscreenButton'
+import { FullscreenButton } from '@/features/walls/FullscreenButton'
+import { useFullscreenToggle } from '@/hooks/useFullscreenToggle'
 import type { PlacedItem } from '@/features/walls/PlacedItem'
 
 // How far beyond the wall's own bounds you can scroll to see items placed off-wall.
@@ -172,7 +173,7 @@ export function WallAssignmentCanvas({
       observer.disconnect()
       window.removeEventListener('resize', updateSize)
     }
-  }, [isFullscreen])
+  }, [isFullscreen, wrapperRef])
 
   useLayoutEffect(() => {
     const transformer = transformerRef.current
