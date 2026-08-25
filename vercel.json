@@ -4,7 +4,7 @@
   "installCommand": "pnpm install",
   "outputDirectory": "client/dist",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://tradeshow-1.onrender.com/api/:path*" },
+    { "source": "/api/:path*", "destination": "https://tradeshow-1-run8.onrender.com/api/:path*" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }
